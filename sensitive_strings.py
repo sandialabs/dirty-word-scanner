@@ -155,19 +155,20 @@ class SensitiveStringsSearcher():
 
                 # Maybe this file is ok? Let's ask the user to sign off on the file.
                 if self.interactive and self.interactive_sign_off(file_ff):
+                    # Add the interactively signed off files to the allowed binary files csv
                     self.unknown_binary_files.remove(file_ff)
                     self.allowed_binary_files.append(file_ff)
+
+                    # First, make a backup copy of the allowed list csv file
+                    if num_interactively_signed_off_files == 0:
+                        path, name, ext = ft.path_components(self.allowed_binary_files_csv)
+                        ft.copy_file(self.allowed_binary_files_csv, path, f"{name}_{tdt.current_date_time_string_forfile()}{ext}")
+
+                    # Overwrite the allowed list csv file with the updated allowed_binary_files
+                    self.allowed_binary_files = sorted(self.allowed_binary_files)
+                    file_ff.to_csv("Allowed Binary Files", path, name, rows=self.allowed_binary_files)
+
                     num_interactively_signed_off_files += 1
-
-            # Add the interactively signed off files to the allowed binary files csv
-            if num_interactively_signed_off_files > 0:
-                # First, make a backup copy
-                path, name, ext = ft.path_components(self.allowed_binary_files_csv)
-                ft.copy_file(self.allowed_binary_files_csv, path, f"{name}_{tdt.current_date_time_string_forfile()}{ext}")
-
-                # Overwrite the file with the updated allowed files
-                self.allowed_binary_files = sorted(self.allowed_binary_files)
-                file_ff.to_csv("Allowed Binary Files", path, name, rows=self.allowed_binary_files)
 
         return len(matches) + len(self.unfound_allowed_binary_files) + len(self.unknown_binary_files)
 

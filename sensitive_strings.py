@@ -65,19 +65,32 @@ class SensitiveStringsSearcher():
     def parse_file(self, file_path: str, file_name_ext: str):
         file_path_norm: str = self.norm_path(file_path, file_name_ext)
         lt.debug(file_path_norm)
+        errmsg = ""
+        is_binary_file = False
 
-        try:
-            lines = ft.read_text_file(file_path_norm)
-        except UnicodeDecodeError:
-            errmsg = f"    UnicodeDecodeError in sensitive_strings.search_file: assuming is a binary file \"{file_path_norm}\""
+        # check if a binary file
+        path, name, ext = ft.path_components(file_name_ext)
+        ext = ext.lower()
+        if self._is_img_ext(ext) or (ext not in ['.txt', '.csv', '.py']):
+            is_binary_file = True
+        else:
+            # attempt to parse the file as a text file
+            try:
+                lines = ft.read_text_file(file_path_norm)
+            except UnicodeDecodeError:
+                errmsg = f"    UnicodeDecodeError in sensitive_strings.search_file: assuming is a binary file \"{file_path_norm}\""
+                is_binary_file = True
+
+        # register binary files
+        if is_binary_file:
             file_ff = ff.FileFingerprint.from_file(self.root_search_dir, file_path, file_name_ext)
 
             if file_ff in self.allowed_binary_files:
-                lt.debug(errmsg)
                 self.unfound_allowed_binary_files.remove(file_ff)
                 self.accepted_binary_files.append(file_ff)
             else:
-                lt.debug(errmsg)  # TODO lt.warn
+                if errmsg != "":
+                    lt.debug(errmsg)  # TODO lt.warn
                 # we'll deal with unknown files as a group
                 self.unknown_binary_files.append(file_ff)
 
@@ -198,7 +211,7 @@ class SensitiveStringsSearcher():
             else:
                 matches.append(ssm.Match(0, 0, 0, "", "", None, "Unknown image file"))
 
-        elif ext.lower() in ".h5":
+        elif ext.lower() == ".h5":
             matches += self.search_hdf5_file(binary_file)
 
         else:
@@ -212,12 +225,15 @@ class SensitiveStringsSearcher():
 
         return matches
 
+    def _is_img_ext(self, ext: str):
+        return ext.lower().lstrip(".") in it.pil_image_formats_rw
+
     def interactive_image_sign_off(self, np_image: np.ndarray = None, description: str = None, file_ff: ff.FileFingerprint = None) -> bool:
         return False  # TODO
         if (np_image is None) and (file_ff is not None):
             file_norm_path = self.norm_path(file_ff.relative_path, file_ff.name_ext)
             _, name, ext = ft.path_components(file_norm_path)
-            if ext.lower().lstrip(".") in it.pil_image_formats_rw:
+            if self._is_img_ext(ext):
                 img = Image.open(file_norm_path).convert('RGB')
                 np_image = np.copy(np.array(img))
                 img.close()

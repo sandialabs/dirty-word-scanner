@@ -26,6 +26,7 @@ class SensitiveStringMatcher():
         self.case_sensitive = False
 
         next_is_regex = False
+        all_regex = False
         for pattern in patterns:
             if pattern.startswith("**"):
                 directive = pattern[2:]
@@ -45,11 +46,13 @@ class SensitiveStringMatcher():
                     self.compare_to = directive[len("compare_to="):]
                 elif directive == "next_is_regex":
                     next_is_regex = True
+                elif directive == "all_regex":
+                    all_regex = True
                 elif directive == "case_sensitive":
                     self.case_sensitive = True
 
             else:
-                if next_is_regex:
+                if next_is_regex or all_regex:
                     pattern = re.compile(pattern.lower())
                     self.patterns.append(pattern)
                 else:
@@ -76,17 +79,23 @@ class SensitiveStringMatcher():
 
                 else:
                     # Check for instances of regex matches
-                    re_match = pattern.match(line.lower())
+                    re_match = pattern.search(line.lower())
                     if re_match:
-                        for group in range(len(re_match.groups())):
-                            start, end = re_match.start(group), re_match.end(group)
-                        if re_match.pos >= 0 and re_match.endpos >= 0:
-                            start, end = re_match.pos, re_match.endpos
+                        if len(re_match.groups()) >= 1:
+                            line_part = re_match[1]
+                            start = line.index(line_part)
+                            end = start + len(line_part)
+                        else:
+                            start, end = re_match.span()[0], re_match.span()[1]
 
                 # There was a match, record it
                 if start >= 0 and end >= 0:
-                    lpstart, lpend = max(start - 5, 0), min(end + 5, len(line))
-                    line_part = line[lpstart:lpend]
+                    line_part = f"`{line[start:end]}`"
+                    if start > 0:
+                        line_part = line[max(start - 5, 0):start] + line_part
+                    if end < len(line):
+                        line_part = line_part + line[end:min(end + 5, len(line))]
+
                     match = Match(lineno, start, end, line, line_part, self)
                     self.set_match_msg(match, pattern)
                     matches.append(match)
@@ -99,5 +108,5 @@ class SensitiveStringMatcher():
 
     def set_match_msg(self, match: Match, pattern: re.Pattern | str):
         log_msg = f"'{self.name}' string matched to pattern '{pattern}' on line {match.lineno} " + \
-            f"[{match.colno}:{match.colend}]: \"{match.line_part}\" (\"{match.line}\")"
+            f"[{match.colno}:{match.colend}]: \"{match.line_part}\" (\"{match.line.strip()}\")"
         match.msg = log_msg

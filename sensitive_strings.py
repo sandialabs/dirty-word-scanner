@@ -101,7 +101,7 @@ class SensitiveStringsSearcher():
                 self.accepted_binary_files.append(file_ff)
             else:
                 if errmsg != "":
-                    lt.debug(errmsg)  # TODO lt.warn
+                    lt.warn(errmsg)
                 # we'll deal with unknown files as a group
                 self.unknown_binary_files.append(file_ff)
 
@@ -240,7 +240,6 @@ class SensitiveStringsSearcher():
         return ext.lower().lstrip(".") in it.pil_image_formats_rw
 
     def interactive_image_sign_off(self, np_image: np.ndarray = None, description: str = None, file_ff: ff.FileFingerprint = None) -> bool:
-        return False  # TODO
         if (np_image is None) and (file_ff is not None):
             file_norm_path = self.norm_path(file_ff.relative_path, file_ff.name_ext)
             _, name, ext = ft.path_components(file_norm_path)
@@ -325,7 +324,6 @@ class SensitiveStringsSearcher():
 
         # Search for sensitive strings in files
         matches: dict[str, list[ssm.Match]] = {}
-        nfiles_with_matches = 0
         for file_path_name_ext in files:
             path, name, ext = ft.path_components(file_path_name_ext)
             file_cache = fc.FileCache.for_file(self.root_search_dir, path, name + ext)
@@ -333,7 +331,6 @@ class SensitiveStringsSearcher():
                 file_matches = self.search_file(path, name + ext)
                 if len(file_matches) > 0:
                     matches[file_path_name_ext] = file_matches
-                    nfiles_with_matches += 1
                 else:
                     self.cached_cleared_files.append(file_cache)
                     self.new_cached_cleared_files.append(file_cache)

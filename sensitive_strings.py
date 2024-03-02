@@ -6,7 +6,6 @@ import numpy as np
 from PIL import Image
 import sys
 import time
-from typing import Literal
 
 import opencsp.common.lib.file.SimpleCsv as sc
 from opencsp.common.lib.opencsp_path import _orp_settings
@@ -22,6 +21,9 @@ import FileFingerprint as ff
 
 
 class SensitiveStringsSearcher():
+    _text_file_extensions = ['.txt', '.csv', '.py', '.md', '.rst']
+    _text_file_names = ['.coverageac']
+
     def __init__(self, root_search_dir: str, sensitive_strings_csv: str, allowed_binary_files_csv: str):
         self.root_search_dir = root_search_dir
         self.sensitive_strings_csv = sensitive_strings_csv
@@ -72,8 +74,13 @@ class SensitiveStringsSearcher():
         # check if a binary file
         path, name, ext = ft.path_components(file_name_ext)
         ext = ext.lower()
-        if self._is_img_ext(ext) or (ext not in ['.txt', '.csv', '.py']):
-            is_binary_file = True
+        if self._is_img_ext(ext):
+            if ext in self._text_file_extensions:
+                is_binary_file = False
+            elif f"{file_path}/{file_name_ext}" in self._text_file_names:
+                is_binary_file = False
+            else:
+                is_binary_file = True
         else:
             # attempt to parse the file as a text file
             try:

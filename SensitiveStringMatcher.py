@@ -70,12 +70,13 @@ class SensitiveStringMatcher():
 
         # case insensitive matching
         if not self.case_sensitive:
-            for i, pattern in enumerate(self.patterns):
-                if isinstance(pattern, str):
-                    self.patterns[i] = pattern.lower()
-                else:
-                    p: re.Pattern = pattern
-                    self.patterns[i] = re.compile(p.pattern.lower())
+            for patterns in [self.patterns, self.neg_patterns]:
+                for i, pattern in enumerate(patterns):
+                    if isinstance(pattern, str):
+                        patterns[i] = pattern.lower()
+                    else:
+                        p: re.Pattern = pattern
+                        patterns[i] = re.compile(p.pattern.lower())
 
     def _search_pattern(self, ihaystack: str, pattern: re.Pattern | str) -> None | list[int]:
         if isinstance(pattern, str):
@@ -137,7 +138,7 @@ class SensitiveStringMatcher():
                 if end < len(line):
                     line_part = line_part + line[end:min(end + 5, len(line))]
 
-                match = Match(lineno, start, end, line, line_part, self)
+                match = Match(lineno + 1, start, end, line, line_part, self)
                 self.set_match_msg(match, pattern)
                 matches.append(match)
                 self.log(match.msg)

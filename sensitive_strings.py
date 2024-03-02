@@ -8,7 +8,7 @@ import sys
 import time
 
 import opencsp.common.lib.file.SimpleCsv as sc
-from opencsp.common.lib.opencsp_path import _orp_settings
+from opencsp.common.lib.opencsp_path import opencsp_settings
 import opencsp.common.lib.opencsp_path.opencsp_root_path as orp
 import opencsp.common.lib.process.subprocess_tools as st
 import opencsp.common.lib.tool.file_tools as ft
@@ -371,10 +371,11 @@ class SensitiveStringsSearcher():
 
 
 if __name__ == "__main__":
-    sensitive_strings_settings_dir = _orp_settings['sensitive_strings_dir']
+    ss_dir = opencsp_settings['sensitive_strings']['dir']
     log_path = ft.norm_path(os.path.join(sensitive_strings_settings_dir, "sensitive_strings_log.txt"))
-    sensitive_strings_csv = ft.norm_path(os.path.join(sensitive_strings_settings_dir, "sensitive_strings.csv"))
-    allowed_binary_files_csv = ft.norm_path(os.path.join(sensitive_strings_settings_dir, "sensitive_strings_allowed_binary_files.csv"))
+    log_path = ft.norm_path(os.path.join(ss_dir, "sensitive_strings_log.txt"))
+    sensitive_strings_csv = ft.norm_path(os.path.join(ss_dir, "sensitive_strings.csv"))
+    allowed_binary_files_csv = ft.norm_path(os.path.join(ss_dir, "sensitive_strings_allowed_binary_files.csv"))
     date_time_str = tdt.current_date_time_string_forfile()
 
     log_already_exists = os.path.exists(log_path)

@@ -231,6 +231,7 @@ class SensitiveStringsSearcher():
             lt.info("    " + relative_path_name_ext)
             lt.info("Is this unknown binary file safe to add, and doesn't contain any sensitive information (y/n)?")
             val = input("")[0]
+            lt.info(f"    User responded '{val}'")
             if val.lower() != 'y':
                 matches.append(ssm.Match(0, 0, 0, "", "", None, "Unknown binary file"))
 
@@ -412,11 +413,11 @@ class SensitiveStringsSearcher():
 
 
 if __name__ == "__main__":
-    ss_dir = opencsp_settings['sensitive_strings']['dir']
-    ss_cache_file = opencsp_settings['sensitive_strings']['cache_file']
-    log_path = ft.norm_path(os.path.join(ss_dir, "sensitive_strings_log.txt"))
-    sensitive_strings_csv = ft.norm_path(os.path.join(ss_dir, "sensitive_strings.csv"))
-    allowed_binary_files_csv = ft.norm_path(os.path.join(ss_dir, "sensitive_strings_allowed_binary_files.csv"))
+    ss_log_dir = ft.norm_path(opencsp_settings['sensitive_strings']['sensitive_strings_dir'])
+    log_path = ft.norm_path(os.path.join(ss_log_dir, "sensitive_strings_log.txt"))
+    sensitive_strings_csv = ft.norm_path(opencsp_settings['sensitive_strings']['sensitive_strings_file'])
+    allowed_binary_files_csv = ft.norm_path(opencsp_settings['sensitive_strings']['allowed_binaries_file'])
+    ss_cache_file = ft.norm_path(opencsp_settings['sensitive_strings']['cache_file'])
     date_time_str = tdt.current_date_time_string_forfile()
 
     log_already_exists = os.path.exists(log_path)

@@ -23,7 +23,6 @@ class SensitiveStringMatcher():
         self.neg_patterns: list[re.Pattern | str] = []
         self.log_type = lt.log.DEBUG
         self.log = lt.debug
-        self.compare_to: str = None
         self.case_sensitive = False
 
         next_is_regex = False
@@ -44,8 +43,6 @@ class SensitiveStringMatcher():
                 elif directive == "error":
                     self.log_type = lt.log.ERROR
                     self.log = lt.error
-                elif directive.startswith("compare_to="):
-                    self.compare_to = directive[len("compare_to="):]
                 elif directive == "next_is_regex":
                     next_is_regex = True
                 elif directive == "all_regex":
@@ -90,12 +87,7 @@ class SensitiveStringMatcher():
             # Check for instances of regex matches
             re_match = pattern.search(ihaystack)
             if re_match:
-                if len(re_match.groups()) >= 1:
-                    line_part = re_match[1]
-                    start = ihaystack.index(line_part)
-                    end = start + len(line_part)
-                else:
-                    start, end = re_match.span()[0], re_match.span()[1]
+                start, end = re_match.span()[0], re_match.span()[1]
                 return [start, end]
 
         return None
@@ -143,10 +135,7 @@ class SensitiveStringMatcher():
                 matches.append(match)
                 self.log(match.msg)
 
-        if self.compare_to:
-            return []  # TODO
-        else:
-            return matches
+        return matches
 
     def set_match_msg(self, match: Match, pattern: re.Pattern | str):
         log_msg = f"'{self.name}' string matched to pattern '{pattern}' on line {match.lineno} " + \

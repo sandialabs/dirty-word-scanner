@@ -398,6 +398,17 @@ class SensitiveStringsSearcher():
             ft.create_directories_if_necessary(path)
             self.new_cached_cleared_files[0].to_csv("Cleared Files Cache", path, name, rows=self.new_cached_cleared_files)
 
+        # Executive summary
+        info_or_warn = lt.info
+        ret = len(matches) + len(self.unfound_allowed_binary_files) + len(self.unknown_binary_files)
+        if ret > 0:
+            info_or_warn = lt.warn
+        info_or_warn("Summary:")
+        info_or_warn("<<<PASS>>>" if ret == 0 else "<<<FAIL>>>")
+        info_or_warn(f"Found {len(matches)} sensitive string matches")
+        info_or_warn(f"Found {len(self.unknown_binary_files)} unknown binary files")
+        info_or_warn(f"Did not find {len(self.unfound_allowed_binary_files)} expected binary files")
+
         # Add a 'match' for any unfound or unknown binary files
         for file_ff in self.unfound_allowed_binary_files:
             fpne = f"{file_ff.relative_path}/{file_ff.name_ext}"
@@ -409,7 +420,7 @@ class SensitiveStringsSearcher():
             matches[fpne].append(ssm.Match(0, 0, 0, "", "", None, f"Unknown binary file {fpne}"))
 
         self.matches = matches
-        return len(matches) + len(self.unfound_allowed_binary_files) + len(self.unknown_binary_files)
+        return ret
 
 
 if __name__ == "__main__":

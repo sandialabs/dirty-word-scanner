@@ -235,11 +235,11 @@ class SensitiveStringsSearcher:
                         matches.append(ssm.Match(0, 0, 0, "", "", None, "HDF5 file denied by user"))
                 else:  # if self.interactive
                     for file_relpath_name_ext in hdf5_matches:
-                        match = hdf5_matches[file_relpath_name_ext]
-                        path, name, _ = ft.path_components(file_relpath_name_ext)
-                        dataset_name = path.replace("\\", "/") + "/" + name
-                        match.msg = dataset_name + "::" + match.msg
-                        matches.append(match)
+                        for match in hdf5_matches[file_relpath_name_ext]:
+                            path, name, _ = ft.path_components(file_relpath_name_ext)
+                            dataset_name = path.replace("\\", "/") + "/" + name
+                            match.msg = dataset_name + "::" + match.msg
+                            matches.append(match)
             else:  # if len(hdf5_matches) > 0:
                 lt.error_and_raise(
                     RuntimeError,

@@ -1,22 +1,21 @@
+import numpy as np
 import os
 import sys
 import unittest
 from unittest.mock import patch
 
-import opencsp.common.lib.opencsp_path.opencsp_root_path as orp
-import opencsp.common.lib.tool.file_tools as ft
-
-# setting path
-sys.path.append(os.path.join(orp.opencsp_code_dir(), ".."))
+sys.path.append(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..")
+)
 import contrib.scripts.sensitive_strings as ss  # nopep8
 
 
 class test_sensitive_strings(unittest.TestCase):
     def setUp(self) -> None:
-        path, _, _ = ft.path_components(__file__)
+        path = os.path.dirname(__file__)
         self.data_dir = os.path.join(path, "data", "input", "sensitive_strings")
         self.out_dir = os.path.join(path, "data", "output", "sensitive_strings")
-        ft.create_directories_if_necessary(self.out_dir)
+        os.makedirs(self.out_dir, exist_ok=True)
 
         self.root_search_dir = os.path.join(self.data_dir, "root_search_dir")
         self.ss_dir = os.path.join(self.data_dir, "per_test_sensitive_strings")
@@ -30,7 +29,7 @@ class test_sensitive_strings(unittest.TestCase):
             lambda _: None,
         )
         self.patcher_copy = patch(
-            "contrib.scripts.sensitive_strings.ft.copy_file",
+            "contrib.scripts.sensitive_strings.shutil.copyfile",
             lambda *args, **kwargs: None,
         )
         self.patcher_update.start()
@@ -39,6 +38,39 @@ class test_sensitive_strings(unittest.TestCase):
     def tearDown(self) -> None:
         self.patcher_update.stop()
         self.patcher_copy.stop()
+
+    def test_numpy_to_image_truncate(self):
+        arr8i = np.array([[0, 125, 255]]).astype(np.int8)
+        arr16i = np.array([[0, 8192, 16384]]).astype(np.int16)
+        arr8f = arr8i.astype(np.float16)
+        arr16f = arr16i.astype(np.float16)
+
+        im8i = ss.numpy_to_image(arr8i, rescale_or_clip="truncate")
+        im16i = ss.numpy_to_image(arr16i, rescale_or_clip="truncate")
+        im8f = ss.numpy_to_image(arr8f, rescale_or_clip="truncate")
+        im16f = ss.numpy_to_image(arr16f, rescale_or_clip="truncate")
+
+        np.testing.assert_array_equal(np.asarray(im8i), np.array([[0, 125, 255]]))
+        np.testing.assert_array_equal(np.asarray(im16i), np.array([[0, 255, 255]]))
+        np.testing.assert_array_equal(np.asarray(im8f), np.array([[0, 125, 255]]))
+        np.testing.assert_array_equal(np.asarray(im16f), np.array([[0, 255, 255]]))
+
+    def test_numpy_to_image_rescale(self):
+        arr8i = np.array([[0, 125, 255]]).astype(np.int8)
+        arr16i = np.array([[0, 8192, 16384]]).astype(np.int16)
+        arr8f = arr8i.astype(np.float16)
+        arr16f = arr16i.astype(np.float16)
+
+        im8i = ss.numpy_to_image(arr8i, rescale_or_clip="rescale")
+        im16i = ss.numpy_to_image(arr16i, rescale_or_clip="rescale")
+        im8f = ss.numpy_to_image(arr8f, rescale_or_clip="rescale")
+        im16f = ss.numpy_to_image(arr16f, rescale_or_clip="rescale")
+
+        np.testing.assert_array_equal(np.asarray(im8i), np.array([[0, 125, 255]]))
+        np.testing.assert_array_equal(np.asarray(im16i), np.array([[0, 127, 255]]))
+        np.testing.assert_array_equal(np.asarray(im8f), np.array([[0, 125, 255]]))
+        np.testing.assert_array_equal(np.asarray(im16f), np.array([[0, 127, 255]]))
+
 
     def test_no_matches(self):
         sensitive_strings_csv = os.path.join(self.ss_dir, "no_matches.csv")

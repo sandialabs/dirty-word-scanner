@@ -3,20 +3,33 @@ import os
 import sys
 import unittest
 
-import opencsp.common.lib.opencsp_path.opencsp_root_path as orp
-import opencsp.common.lib.tool.file_tools as ft
-
-# setting path
-sys.path.append(os.path.join(orp.opencsp_code_dir(), ".."))
+sys.path.append(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..")
+)
 import contrib.scripts.FileFingerprint as ff  # nopep8
 
 
 class test_FileFingerprint(unittest.TestCase):
     def setUp(self) -> None:
-        path, _, _ = ft.path_components(__file__)
+        path = os.path.dirname(__file__)
         self.data_dir = os.path.join(path, "data", "input", "FileFingerprint")
         self.out_dir = os.path.join(path, "data", "output", "FileFingerprint")
-        ft.create_directories_if_necessary(self.out_dir)
+        os.makedirs(self.out_dir, exist_ok=True)
+
+    def _write_text_file(
+        self,
+        output_subdirectory: str,
+        output_file_basename: str,
+        output_string: str,
+    ) -> None:
+        output_directory = os.path.join(self.out_dir, output_subdirectory)
+        os.makedirs(output_directory, exist_ok=True)
+        output_dir_body_ext = os.path.join(
+            output_directory,
+            output_file_basename + ".txt",
+        )
+        with open(output_dir_body_ext, "w") as output_stream:
+            output_stream.write(output_string + "\n")
 
     def test_equal(self):
         d1 = "equal1"
@@ -25,8 +38,8 @@ class test_FileFingerprint(unittest.TestCase):
         f2 = "equal_file"
         contents = "%0.10f" % random.Random().random()
 
-        ft.write_text_file(f1, f"{self.out_dir}/{d1}", f1, [contents], error_if_dir_not_exist=False)
-        ft.write_text_file(f2, f"{self.out_dir}/{d2}", f2, [contents], error_if_dir_not_exist=False)
+        self._write_text_file(d1, f1, contents)
+        self._write_text_file(d2, f2, contents)
         ff1 = ff.FileFingerprint.for_file(f"{self.out_dir}/{d1}", "", f1 + ".txt")
         ff2 = ff.FileFingerprint.for_file(f"{self.out_dir}/{d2}", "", f2 + ".txt")
 
@@ -39,8 +52,8 @@ class test_FileFingerprint(unittest.TestCase):
         f2 = "equal_file"
         contents = "%0.10f" % random.Random().random()
 
-        ft.write_text_file(f1, f"{self.out_dir}/{d1}", f1, [contents], error_if_dir_not_exist=False)
-        ft.write_text_file(f2, f"{self.out_dir}/{d2}", f2, [contents], error_if_dir_not_exist=False)
+        self._write_text_file(d1, f1, contents)
+        self._write_text_file(d2, f2, contents)
         ff1 = ff.FileFingerprint.for_file(self.out_dir, d1, f1 + ".txt")
         ff2 = ff.FileFingerprint.for_file(self.out_dir, d2, f2 + ".txt")
 
@@ -53,8 +66,8 @@ class test_FileFingerprint(unittest.TestCase):
         f2 = "equal_file2"
         contents = "%0.10f" % random.Random().random()
 
-        ft.write_text_file(f1, f"{self.out_dir}/{d1}", f1, [contents], error_if_dir_not_exist=False)
-        ft.write_text_file(f2, f"{self.out_dir}/{d2}", f2, [contents], error_if_dir_not_exist=False)
+        self._write_text_file(d1, f1, contents)
+        self._write_text_file(d2, f2, contents)
         ff1 = ff.FileFingerprint.for_file(f"{self.out_dir}/{d1}", "", f1 + ".txt")
         ff2 = ff.FileFingerprint.for_file(f"{self.out_dir}/{d2}", "", f2 + ".txt")
 
@@ -69,8 +82,8 @@ class test_FileFingerprint(unittest.TestCase):
         contents1 = contents + " "
         contents2 = " " + contents
 
-        ft.write_text_file(f1, f"{self.out_dir}/{d1}", f1, [contents1], error_if_dir_not_exist=False)
-        ft.write_text_file(f2, f"{self.out_dir}/{d2}", f2, [contents2], error_if_dir_not_exist=False)
+        self._write_text_file(d1, f1, contents1)
+        self._write_text_file(d2, f2, contents2)
         ff1 = ff.FileFingerprint.for_file(f"{self.out_dir}/{d1}", "", f1 + ".txt")
         ff2 = ff.FileFingerprint.for_file(f"{self.out_dir}/{d2}", "", f2 + ".txt")
 

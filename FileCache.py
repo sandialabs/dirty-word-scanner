@@ -1,18 +1,15 @@
+import csv
 import dataclasses
 import datetime
 import os
 import sys
 
-import opencsp.common.lib.file.CsvInterface as ci
-import opencsp.common.lib.opencsp_path.opencsp_root_path as orp
-import opencsp.common.lib.tool.file_tools as ft
-
-sys.path.append(os.path.join(orp.opencsp_code_dir(), ".."))
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 import contrib.scripts.AbstractFileFingerprint as aff  # nopep8
 
 
 @dataclasses.dataclass()
-class FileCache(ci.CsvInterface, aff.AbstractFileFingerprint):
+class FileCache(aff.AbstractFileFingerprint):
     # relative_path: str
     # name_ext: str
     last_modified: str
@@ -37,10 +34,24 @@ class FileCache(ci.CsvInterface, aff.AbstractFileFingerprint):
 
     @classmethod
     def for_file(cls, root_path: str, relative_path: str, file_name_ext: str):
-        norm_path = ft.norm_path(os.path.join(root_path, relative_path, file_name_ext))
+        norm_path = os.path.normpath(os.path.join(root_path, relative_path, file_name_ext))
         modified_time = datetime.datetime.fromtimestamp(os.stat(norm_path).st_mtime)
         last_modified = modified_time.strftime("%Y-%m-%d %H:%M:%S")
         return cls(relative_path, file_name_ext, last_modified)
+
+    @classmethod
+    def from_csv(cls, file_path: str, file_name_ext: str):
+        """Return N instances of this class from a csv file with a header and N lines.
+
+        Basic implementation of from_csv. Subclasses are encouraged to extend this method.
+        """
+        input_path_file = os.path.join(file_path, file_name_ext)
+        data_rows: list[list[str]] = []
+        with open(input_path_file) as csv_file:
+            reader = csv.reader(csv_file, delimiter=",")
+            for row in reader:
+                data_rows.append(row)
+        return [cls.from_csv_line(row) for row in data_rows[1:]]
 
     def __hash__(self):
         return hash(self.relative_path)

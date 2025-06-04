@@ -1,19 +1,19 @@
+import csv
 import dataclasses
 import hashlib
+import logging
 import os
 import sys
 
-import opencsp.common.lib.file.CsvInterface as ci
-import opencsp.common.lib.opencsp_path.opencsp_root_path as orp
-import opencsp.common.lib.tool.file_tools as ft
-import opencsp.common.lib.tool.log_tools as lt
-
-sys.path.append(os.path.join(orp.opencsp_code_dir(), ".."))
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 import contrib.scripts.AbstractFileFingerprint as aff  # nopep8
 
 
+logger = logging.getLogger(__name__)
+
+
 @dataclasses.dataclass()
-class FileFingerprint(ci.CsvInterface, aff.AbstractFileFingerprint):
+class FileFingerprint(aff.AbstractFileFingerprint):
     # relative_path: str
     # name_ext: str
     size: int
@@ -41,15 +41,31 @@ class FileFingerprint(ci.CsvInterface, aff.AbstractFileFingerprint):
 
     @classmethod
     def for_file(cls, root_path: str, relative_path: str, file_name_ext: str):
-        norm_path = ft.norm_path(os.path.join(root_path, relative_path, file_name_ext))
-        file_size = ft.file_size(norm_path)
+        norm_path = os.path.normpath(os.path.join(root_path, relative_path, file_name_ext))
+        file_size = os.path.getsize(norm_path)
         with open(norm_path, "rb") as fin:
             file_hash = hashlib.sha256(fin.read()).hexdigest()
         return cls(relative_path, file_name_ext, file_size, file_hash)
 
+    @classmethod
+    def from_csv(cls, file_path: str, file_name_ext: str):
+        """Return N instances of this class from a csv file with a header and N lines.
+
+        Basic implementation of from_csv. Subclasses are encouraged to extend this method.
+        """
+        input_path_file = os.path.join(file_path, file_name_ext)
+        data_rows: list[list[str]] = []
+        with open(input_path_file) as csv_file:
+            reader = csv.reader(csv_file, delimiter=",")
+            for row in reader:
+                data_rows.append(row)
+        return [cls.from_csv_line(row) for row in data_rows[1:]]
+
     def __lt__(self, other: "FileFingerprint"):
         if not isinstance(other, FileFingerprint):
-            lt.error_and_raise(TypeError, f"'other' is not of type FileFingerprint but instead of type {type(other)}")
+            message = f"'other' is not of type FileFingerprint but instead of type {type(other)}"
+            logger.error(message)
+            raise TypeError(message)
         if self.relative_path == other.relative_path:
             return self.name_ext < other.name_ext
         return self.relative_path < other.relative_path

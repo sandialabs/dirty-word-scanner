@@ -1,7 +1,8 @@
 import dataclasses
+import logging
 import re
 
-import opencsp.common.lib.tool.log_tools as lt
+logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
@@ -20,8 +21,7 @@ class SensitiveStringMatcher:
         self.name = name
         self.patterns: list[re.Pattern | str] = []
         self.neg_patterns: list[re.Pattern | str] = []
-        self.log_type = lt.log.DEBUG
-        self.log = lt.debug
+        self.log = logging.debug
         self.case_sensitive = False
 
         next_is_regex = False
@@ -31,17 +31,13 @@ class SensitiveStringMatcher:
             if pattern.startswith("**"):
                 directive = pattern[2:]
                 if directive == "debug":
-                    self.log_type = lt.log.DEBUG
-                    self.log = lt.debug
+                    self.log = logging.debug
                 elif directive == "info":
-                    self.log_type = lt.log.INFO
-                    self.log = lt.info
-                elif directive == "warn":
-                    self.log_type = lt.log.WARN
-                    self.log = lt.warn
+                    self.log = logging.info
+                elif directive == "warning":
+                    self.log = logging.warning
                 elif directive == "error":
-                    self.log_type = lt.log.ERROR
-                    self.log = lt.error
+                    self.log = logging.error
                 elif directive == "next_is_regex":
                     next_is_regex = True
                 elif directive == "all_regex":

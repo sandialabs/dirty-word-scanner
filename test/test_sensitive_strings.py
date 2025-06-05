@@ -1,7 +1,7 @@
 import os
 import sys
 import unittest
-import unittest.mock
+from unittest.mock import patch
 
 import opencsp.common.lib.opencsp_path.opencsp_root_path as orp
 import opencsp.common.lib.tool.file_tools as ft
@@ -23,6 +23,22 @@ class test_sensitive_strings(unittest.TestCase):
         self.allowed_binaries_dir = os.path.join(self.data_dir, "per_test_allowed_binaries")
         self.all_binaries = os.path.join(self.allowed_binaries_dir, "all_binaries.csv")
         self.no_binaries = os.path.join(self.allowed_binaries_dir, "no_binaries.csv")
+
+        self.patcher_update = patch.object(
+            ss.SensitiveStringsSearcher,
+            "update_allowed_binaries_csv",
+            lambda _: None,
+        )
+        self.patcher_copy = patch(
+            "contrib.scripts.sensitive_strings.ft.copy_file",
+            lambda *args, **kwargs: None,
+        )
+        self.patcher_update.start()
+        self.patcher_copy.start()
+
+    def tearDown(self) -> None:
+        self.patcher_update.stop()
+        self.patcher_copy.stop()
 
     def test_no_matches(self):
         sensitive_strings_csv = os.path.join(self.ss_dir, "no_matches.csv")

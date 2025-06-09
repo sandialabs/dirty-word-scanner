@@ -1,12 +1,9 @@
 import os
 import sys
-import time
 import unittest
-import unittest.mock
 
 import opencsp.common.lib.opencsp_path.opencsp_root_path as orp
 import opencsp.common.lib.tool.file_tools as ft
-import opencsp.common.lib.tool.time_date_tools as tdt
 
 # setting path
 sys.path.append(os.path.join(orp.opencsp_code_dir(), ".."))

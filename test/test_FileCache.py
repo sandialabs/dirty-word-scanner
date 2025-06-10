@@ -2,37 +2,42 @@ import os
 import sys
 import time
 import unittest
-import unittest.mock
+from datetime import datetime
 
-import opencsp.common.lib.opencsp_path.opencsp_root_path as orp
-import opencsp.common.lib.tool.file_tools as ft
-import opencsp.common.lib.tool.time_date_tools as tdt
-
-# setting path
-sys.path.append(os.path.join(orp.opencsp_code_dir(), ".."))
+sys.path.append(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..")
+)
 import contrib.scripts.FileCache as fc  # nopep8
 
 
 class test_FileCache(unittest.TestCase):
     def setUp(self) -> None:
-        path, _, _ = ft.path_components(__file__)
+        path = os.path.dirname(__file__)
         self.data_dir = os.path.join(path, "data", "input", "FileCache")
         self.out_dir = os.path.join(path, "data", "output", "FileCache")
-        ft.create_directories_if_necessary(self.out_dir)
+        os.makedirs(self.out_dir, exist_ok=True)
+
+    def _write_text_file(self, output_file_basename: str) -> None:
+        output_dir_body_ext = os.path.join(
+            self.out_dir,
+            output_file_basename + ".txt",
+        )
+        with open(output_dir_body_ext, "w") as _:
+            pass
 
     def _delay_1_second(self):
         """sleeps up to 1 second so that the file modification time looks different"""
-        ts1 = tdt.current_time_string_forfile()
-        while ts1 == tdt.current_time_string_forfile():
+        ts1 = datetime.now().strftime("%H%M%S")
+        while ts1 == datetime.now().strftime("%H%M%S"):
             time.sleep(0.05)
 
     def test_file_changed(self):
         outfile = "changing_file.txt"
 
-        ft.write_text_file(outfile, self.out_dir, outfile, [])
+        self._write_text_file(outfile)
         fc1 = fc.FileCache.for_file("", self.out_dir, outfile + ".txt")
         self._delay_1_second()
-        ft.write_text_file(outfile, self.out_dir, outfile, [])
+        self._write_text_file(outfile)
         fc2 = fc.FileCache.for_file("", self.out_dir, outfile + ".txt")
 
         self.assertNotEqual(fc1, fc2)
@@ -40,7 +45,7 @@ class test_FileCache(unittest.TestCase):
     def test_file_unchanged(self):
         outfile = "static_file.txt"
 
-        ft.write_text_file(outfile, self.out_dir, outfile, [])
+        self._write_text_file(outfile)
         fc1 = fc.FileCache.for_file("", self.out_dir, outfile + ".txt")
         self._delay_1_second()
         fc2 = fc.FileCache.for_file("", self.out_dir, outfile + ".txt")

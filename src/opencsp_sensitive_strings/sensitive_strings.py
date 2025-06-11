@@ -15,7 +15,7 @@ from typing import Union
 
 import cv2
 import numpy as np
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 
 import src.opencsp_sensitive_strings.FileCache as fc
 import src.opencsp_sensitive_strings.FileFingerprint as ff
@@ -812,7 +812,12 @@ class SensitiveStringsSearcher:
             if self._is_img_ext(ext):
                 try:
                     img = Image.open(file_norm_path).convert("RGB")
-                except:
+                except (
+                    FileNotFoundError,
+                    UnidentifiedImageError,
+                    ValueError,
+                    TypeError,
+                ):
                     img = None
                 if img is not None:
                     np_image = np.copy(np.array(img))
@@ -879,7 +884,9 @@ class SensitiveStringsSearcher:
             "",
             os.path.basename(self.sensitive_strings_csv),
         )
-        if self.cache_file_csv != None and os.path.isfile(self.cache_file_csv):
+        if self.cache_file_csv is not None and os.path.isfile(
+            self.cache_file_csv
+        ):
             self.cached_cleared_files = [
                 inst
                 for inst, _ in fc.FileCache.from_csv(
@@ -887,7 +894,7 @@ class SensitiveStringsSearcher:
                     os.path.basename(self.cache_file_csv),
                 )
             ]
-            if not sensitive_strings_cache in self.cached_cleared_files:
+            if sensitive_strings_cache not in self.cached_cleared_files:
                 self.cached_cleared_files.clear()
         self.new_cached_cleared_files.append(sensitive_strings_cache)
 
@@ -1122,7 +1129,7 @@ class SensitiveStringsSearcher:
                     self.new_cached_cleared_files.remove(file_cf)
                     break
         if (
-            self.cache_file_csv != None
+            self.cache_file_csv is not None
             and len(self.new_cached_cleared_files) > 0
         ):
             path = os.path.dirname(self.cache_file_csv)

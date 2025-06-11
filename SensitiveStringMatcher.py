@@ -1,28 +1,27 @@
 import dataclasses
+import logging
 import re
-from typing import Callable
 
-import opencsp.common.lib.tool.log_tools as lt
+logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass
-class Match():
+class Match:
     lineno: int
     colno: int
     colend: int
     line: str
     line_part: str
-    matcher: 'SensitiveStringMatcher'
+    matcher: "SensitiveStringMatcher"
     msg: str = ""
 
 
-class SensitiveStringMatcher():
+class SensitiveStringMatcher:
     def __init__(self, name: str, *patterns: str):
         self.name = name
         self.patterns: list[re.Pattern | str] = []
         self.neg_patterns: list[re.Pattern | str] = []
-        self.log_type = lt.log.DEBUG
-        self.log = lt.debug
+        self.log = logging.debug
         self.case_sensitive = False
 
         next_is_regex = False
@@ -32,17 +31,13 @@ class SensitiveStringMatcher():
             if pattern.startswith("**"):
                 directive = pattern[2:]
                 if directive == "debug":
-                    self.log_type = lt.log.DEBUG
-                    self.log = lt.debug
+                    self.log = logging.debug
                 elif directive == "info":
-                    self.log_type = lt.log.INFO
-                    self.log = lt.info
-                elif directive == "warn":
-                    self.log_type = lt.log.WARN
-                    self.log = lt.warn
+                    self.log = logging.info
+                elif directive == "warning":
+                    self.log = logging.warning
                 elif directive == "error":
-                    self.log_type = lt.log.ERROR
-                    self.log = lt.error
+                    self.log = logging.error
                 elif directive == "next_is_regex":
                     next_is_regex = True
                 elif directive == "all_regex":
@@ -115,7 +110,7 @@ class SensitiveStringMatcher():
             matching: dict[re.Pattern | str, list[int]] = {}
             for pattern in possible_matching:
                 span = possible_matching[pattern]
-                line_part = iline[span[0]:span[1]]
+                line_part = iline[span[0] : span[1]]
                 if len(self._search_patterns(line_part, self.neg_patterns)) == 0:
                     matching[pattern] = span
 
@@ -124,20 +119,23 @@ class SensitiveStringMatcher():
                 span = matching[pattern]
 
                 start, end = span[0], span[1]
-                line_part = f"`{line[start:end]}`"
+                line_part = line[start:end]
+                line_context = f"`{line_part}`"
                 if start > 0:
-                    line_part = line[max(start - 5, 0):start] + line_part
+                    line_context = line[max(start - 5, 0) : start] + line_context
                 if end < len(line):
-                    line_part = line_part + line[end:min(end + 5, len(line))]
+                    line_context = line_context + line[end : min(end + 5, len(line))]
 
                 match = Match(lineno + 1, start, end, line, line_part, self)
-                self.set_match_msg(match, pattern)
+                self.set_match_msg(match, pattern, line_context)
                 matches.append(match)
                 self.log(match.msg)
 
         return matches
 
-    def set_match_msg(self, match: Match, pattern: re.Pattern | str):
-        log_msg = f"'{self.name}' string matched to pattern '{pattern}' on line {match.lineno} " + \
-            f"[{match.colno}:{match.colend}]: \"{match.line_part.strip()}\" (\"{match.line.strip()}\")"
+    def set_match_msg(self, match: Match, pattern: re.Pattern | str, line_context: str):
+        log_msg = (
+            f"'{self.name}' string matched to pattern '{pattern}' on line {match.lineno} "
+            + f'[{match.colno}:{match.colend}]: "{line_context.strip()}" ("{match.line.strip()}")'
+        )
         match.msg = log_msg

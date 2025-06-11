@@ -14,15 +14,15 @@ class FileCache(aff.AbstractFileFingerprint):
     """ The system time that the file was last modified at. """
 
     @staticmethod
-    def csv_header(delimeter=",") -> str:
-        """Static method. Takes at least one parameter 'delimeter' and returns the string that represents the csv header."""
+    def csv_header(delimiter=",") -> str:
+        """Static method. Takes at least one parameter 'delimiter' and returns the string that represents the csv header."""
         keys = list(dataclasses.asdict(FileCache("", "", "")).keys())
-        return delimeter.join(keys)
+        return delimiter.join(keys)
 
-    def to_csv_line(self, delimeter=",") -> str:
+    def to_csv_line(self, delimiter=",") -> str:
         """Return a string representation of this instance, to be written to a csv file. Does not include a trailing newline."""
         values = list(dataclasses.asdict(self).values())
-        return delimeter.join([str(value) for value in values])
+        return delimiter.join([str(value) for value in values])
 
     @classmethod
     def from_csv_line(cls, data: list[str]) -> tuple["FileCache", list[str]]:

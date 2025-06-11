@@ -20,15 +20,15 @@ class FileFingerprint(aff.AbstractFileFingerprint):
     """ The latest hashlib.sha256([file_contents]).hexdigest() of the file. """
 
     @staticmethod
-    def csv_header(delimeter=",") -> str:
-        """Static method. Takes at least one parameter 'delimeter' and returns the string that represents the csv header."""
+    def csv_header(delimiter=",") -> str:
+        """Static method. Takes at least one parameter 'delimiter' and returns the string that represents the csv header."""
         keys = list(dataclasses.asdict(FileFingerprint("", "", "", "")).keys())
-        return delimeter.join(keys)
+        return delimiter.join(keys)
 
-    def to_csv_line(self, delimeter=",") -> str:
+    def to_csv_line(self, delimiter=",") -> str:
         """Return a string representation of this instance, to be written to a csv file. Does not include a trailing newline."""
         values = list(dataclasses.asdict(self).values())
-        return delimeter.join([str(value) for value in values])
+        return delimiter.join([str(value) for value in values])
 
     @classmethod
     def from_csv_line(cls, data: list[str]) -> tuple["FileFingerprint", list[str]]:

@@ -729,75 +729,6 @@ class SensitiveStringsSearcher:
     def _is_img_ext(self, ext: str):
         return ext.lower().lstrip(".") in pil_image_formats_rw
 
-    @staticmethod
-    def numpy_to_image(
-        arr: np.ndarray, rescale_or_clip="rescale", rescale_max=-1
-    ):
-        """Convert the numpy representation of an image to a Pillow Image.
-
-        Coverts the given arr to an Image. The array is converted to an integer
-        type, as necessary. The color information is then rescaled/clipd to fit
-        within an 8-bit color depth.
-
-        In theory, images can be saved with higher bit-depth information using
-        opencv imwrite('12bitimage.png', arr), but I (BGB) haven't tried very hard
-        and haven't had any luck getting this to work.
-
-        Parameters
-        ----------
-        arr : np.ndarray
-            The array to be converted.
-        rescale_or_clip : str, optional
-            Whether to rescale the value in the array to fit within 0-255, or to
-            clip the values so that anything over 255 is set to 255. By default
-            'rescale'.
-        rescale_max : int, optional
-            The maximum value expected in the input arr, which will be set to 255.
-            When less than 0, the maximum of the input array is used. Only
-            applicable when rescale_or_clip='rescale'. By default -1.
-
-        Returns
-        -------
-        image: PIL.Image
-            The image representation of the input array.
-        """
-        allowed_int_types = [
-            np.int8,
-            np.uint8,
-            np.int16,
-            np.uint16,
-            np.int32,
-            np.uint32,
-            np.int64,
-            np.uint64,
-        ]
-
-        # get the current integer size, and convert to integer type
-        if not np.issubdtype(arr.dtype, np.integer):
-            maxval = np.max(arr)
-            for int_type in allowed_int_types:
-                if np.iinfo(int_type).max >= maxval:
-                    break
-            arr = arr.astype(int_type)
-        else:
-            int_type = arr.dtype
-
-        # rescale down to 8-bit if bitdepth is too large
-        if np.iinfo(int_type).max > 255:
-            if rescale_or_clip == "rescale":
-                if rescale_max < 0:
-                    rescale_max = np.max(arr)
-                scale = 255 / rescale_max
-                arr = arr * scale
-                arr = np.clip(arr, 0, 255)
-                arr = arr.astype(np.uint8)
-            else:
-                arr = np.clip(arr, 0, 255)
-                arr = arr.astype(np.uint8)
-
-        img = Image.fromarray(arr)
-        return img
-
     def interactive_image_sign_off(
         self,
         np_image: np.ndarray = None,
@@ -834,7 +765,7 @@ class SensitiveStringsSearcher:
 
         else:
             # rescale the image for easier viewing
-            img = self.numpy_to_image(np_image)
+            img = numpy_to_image(np_image)
             rescaled = ""
             if img.size[0] > 1920:
                 scale = 1920 / img.size[0]

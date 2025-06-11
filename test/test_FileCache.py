@@ -21,13 +21,13 @@ class test_FileCache(unittest.TestCase):
         with open(output_dir_body_ext, "w") as _:
             pass
 
-    def _delay_1_second(self):
+    def _delay_1_second(self) -> None:
         """sleeps up to 1 second so that the file modification time looks different"""
         ts1 = datetime.now().strftime("%H%M%S")
         while ts1 == datetime.now().strftime("%H%M%S"):
             time.sleep(0.05)
 
-    def test_file_changed(self):
+    def test_file_changed(self) -> None:
         outfile = "changing_file.txt"
 
         self._write_text_file(outfile)
@@ -38,7 +38,7 @@ class test_FileCache(unittest.TestCase):
 
         self.assertNotEqual(fc1, fc2)
 
-    def test_file_unchanged(self):
+    def test_file_unchanged(self) -> None:
         outfile = "static_file.txt"
 
         self._write_text_file(outfile)

@@ -11,10 +11,10 @@ class AbstractFileFingerprint(ABC):
     """ "name.ext" of the file. """
 
     @property
-    def relpath_name_ext(self):
+    def relpath_name_ext(self) -> str:
         return os.path.join(self.relative_path, self.name_ext)
 
-    def eq_aff(self, other: "AbstractFileFingerprint"):
+    def eq_aff(self, other: "AbstractFileFingerprint") -> bool:
         if not isinstance(other, AbstractFileFingerprint):
             return False
         return (

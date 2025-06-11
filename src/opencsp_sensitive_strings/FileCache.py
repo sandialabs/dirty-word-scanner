@@ -8,18 +8,16 @@ import src.opencsp_sensitive_strings.AbstractFileFingerprint as aff
 
 @dataclasses.dataclass()
 class FileCache(aff.AbstractFileFingerprint):
-    # relative_path: str
-    # name_ext: str
     last_modified: str
     """ The system time that the file was last modified at. """
 
     @staticmethod
-    def csv_header(delimiter=",") -> str:
+    def csv_header(delimiter: str = ",") -> str:
         """Static method. Takes at least one parameter 'delimiter' and returns the string that represents the csv header."""
         keys = list(dataclasses.asdict(FileCache("", "", "")).keys())
         return delimiter.join(keys)
 
-    def to_csv_line(self, delimiter=",") -> str:
+    def to_csv_line(self, delimiter: str = ",") -> str:
         """Return a string representation of this instance, to be written to a csv file. Does not include a trailing newline."""
         values = list(dataclasses.asdict(self).values())
         return delimiter.join([str(value) for value in values])
@@ -31,7 +29,7 @@ class FileCache(aff.AbstractFileFingerprint):
         return cls(root, name_ext, last_modified), data[3:]
 
     @classmethod
-    def for_file(cls, root_path: str, relative_path: str, file_name_ext: str):
+    def for_file(cls, root_path: str, relative_path: str, file_name_ext: str) -> "FileCache":
         norm_path = os.path.normpath(
             os.path.join(root_path, relative_path, file_name_ext)
         )
@@ -42,7 +40,7 @@ class FileCache(aff.AbstractFileFingerprint):
         return cls(relative_path, file_name_ext, last_modified)
 
     @classmethod
-    def from_csv(cls, file_path: str, file_name_ext: str):
+    def from_csv(cls, file_path: str, file_name_ext: str) -> list[tuple["FileCache", list[str]]]:
         """Return N instances of this class from a csv file with a header and N lines.
 
         Basic implementation of from_csv. Subclasses are encouraged to extend this method.
@@ -55,5 +53,5 @@ class FileCache(aff.AbstractFileFingerprint):
                 data_rows.append(row)
         return [cls.from_csv_line(row) for row in data_rows[1:]]
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.relative_path)

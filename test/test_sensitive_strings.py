@@ -45,7 +45,7 @@ class test_sensitive_strings(unittest.TestCase):
         self.patcher_update.stop()
         self.patcher_copy.stop()
 
-    def test_numpy_to_image_truncate(self):
+    def test_numpy_to_image_truncate(self) -> None:
         arr8i = np.array([[0, 125, 255]]).astype(np.int8)
         arr16i = np.array([[0, 8192, 16384]]).astype(np.int16)
         arr8f = arr8i.astype(np.float16)
@@ -69,7 +69,7 @@ class test_sensitive_strings(unittest.TestCase):
             np.asarray(im16f), np.array([[0, 255, 255]])
         )
 
-    def test_numpy_to_image_rescale(self):
+    def test_numpy_to_image_rescale(self) -> None:
         arr8i = np.array([[0, 125, 255]]).astype(np.int8)
         arr16i = np.array([[0, 8192, 16384]]).astype(np.int16)
         arr8f = arr8i.astype(np.float16)
@@ -93,7 +93,7 @@ class test_sensitive_strings(unittest.TestCase):
             np.asarray(im16f), np.array([[0, 127, 255]])
         )
 
-    def test_no_matches(self):
+    def test_no_matches(self) -> None:
         sensitive_strings_csv = os.path.join(self.ss_dir, "no_matches.csv")
         searcher = ss.SensitiveStringsSearcher(
             self.root_search_dir, sensitive_strings_csv, self.all_binaries
@@ -101,7 +101,7 @@ class test_sensitive_strings(unittest.TestCase):
         searcher.git_files_only = False
         self.assertEqual(searcher.search_files(), 0)
 
-    def test_single_matcher(self):
+    def test_single_matcher(self) -> None:
         # based on file name
         sensitive_strings_csv = os.path.join(
             self.ss_dir, "test_single_matcher.csv"
@@ -122,7 +122,7 @@ class test_sensitive_strings(unittest.TestCase):
         searcher.git_files_only = False
         self.assertEqual(searcher.search_files(), 1)
 
-    def test_directory_matcher(self):
+    def test_directory_matcher(self) -> None:
         sensitive_strings_csv = os.path.join(
             self.ss_dir, "test_directory_matcher.csv"
         )
@@ -132,7 +132,7 @@ class test_sensitive_strings(unittest.TestCase):
         searcher.git_files_only = False
         self.assertEqual(searcher.search_files(), 1)
 
-    def test_all_matches(self):
+    def test_all_matches(self) -> None:
         sensitive_strings_csv = os.path.join(
             self.ss_dir, "test_all_matches.csv"
         )
@@ -140,13 +140,13 @@ class test_sensitive_strings(unittest.TestCase):
             self.root_search_dir, sensitive_strings_csv, self.no_binaries
         )
         searcher.git_files_only = False
-        # 6 matches:
-        #   files:   a.txt, b/b.txt, c/d/e.txt
-        #   images:  c/img1.png, c/img2.jpg
-        #   hdf5:    f.h5/f
+        # There should be 6 matches:
+        # * files:  a.txt, b/b.txt, and c/d/e.txt
+        # * images:  c/img1.png, and c/img2.jpg
+        # * hdf5:  f.h5/f
         self.assertEqual(searcher.search_files(), 6)
 
-    def test_single_unknown_binary(self):
+    def test_single_unknown_binary(self) -> None:
         sensitive_strings_csv = os.path.join(self.ss_dir, "no_matches.csv")
         single_binary_csv = os.path.join(
             self.allowed_binaries_dir, "single_binary.csv"
@@ -157,7 +157,7 @@ class test_sensitive_strings(unittest.TestCase):
         searcher.git_files_only = False
         self.assertEqual(searcher.search_files(), 1)
 
-    def test_single_expected_not_found_binary(self):
+    def test_single_expected_not_found_binary(self) -> None:
         sensitive_strings_csv = os.path.join(self.ss_dir, "no_matches.csv")
         single_binary_csv = os.path.join(
             self.allowed_binaries_dir, "single_expected_not_found_binary.csv"
@@ -169,7 +169,7 @@ class test_sensitive_strings(unittest.TestCase):
         # 2 unknown binaries, and 1 expected not found
         self.assertEqual(searcher.search_files(), 3)
 
-    def test_hdf5_match(self):
+    def test_hdf5_match(self) -> None:
         sensitive_strings_csv = os.path.join(self.ss_dir, "h5_match.csv")
         searcher = ss.SensitiveStringsSearcher(
             self.root_search_dir, sensitive_strings_csv, self.all_binaries

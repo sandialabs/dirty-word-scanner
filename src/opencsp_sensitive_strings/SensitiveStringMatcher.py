@@ -18,7 +18,7 @@ class Match:
 
 
 class SensitiveStringMatcher:
-    def __init__(self, name: str, *patterns: str):
+    def __init__(self, name: str, *patterns: str) -> None:
         self.name = name
         self.patterns: list[Union[re.Pattern, str]] = []
         self.neg_patterns: list[Union[re.Pattern, str]] = []
@@ -102,7 +102,7 @@ class SensitiveStringMatcher:
 
         return ret
 
-    def check_lines(self, lines: list[str]):
+    def check_lines(self, lines: list[str]) -> list[Match]:
         matches: list[Match] = []
 
         for lineno, line in enumerate(lines):
@@ -147,7 +147,7 @@ class SensitiveStringMatcher:
 
     def set_match_msg(
         self, match: Match, pattern: Union[re.Pattern, str], line_context: str
-    ):
+    ) -> None:
         log_msg = (
             f"'{self.name}' string matched to pattern '{pattern}' on line {match.lineno} "
             + f'[{match.colno}:{match.colend}]: "{line_context.strip()}" ("{match.line.strip()}")'

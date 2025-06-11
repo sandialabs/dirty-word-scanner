@@ -27,7 +27,7 @@ class test_FileFingerprint(unittest.TestCase):
         with open(output_dir_body_ext, "w") as output_stream:
             output_stream.write(output_string + "\n")
 
-    def test_equal(self):
+    def test_equal(self) -> None:
         d1 = "equal1"
         d2 = "equal2"
         f1 = "equal_file"
@@ -45,7 +45,7 @@ class test_FileFingerprint(unittest.TestCase):
 
         self.assertEqual(ff1, ff2)
 
-    def test_not_equal_relpath(self):
+    def test_not_equal_relpath(self) -> None:
         d1 = "not_equal_relpath1"
         d2 = "not_equal_relpath2"
         f1 = "equal_file"
@@ -59,7 +59,7 @@ class test_FileFingerprint(unittest.TestCase):
 
         self.assertNotEqual(ff1, ff2)
 
-    def test_not_equal_filename(self):
+    def test_not_equal_filename(self) -> None:
         d1 = "not_equal_filename1"
         d2 = "not_equal_filename2"
         f1 = "equal_file1"
@@ -77,7 +77,7 @@ class test_FileFingerprint(unittest.TestCase):
 
         self.assertNotEqual(ff1, ff2)
 
-    def test_not_equal_hash(self):
+    def test_not_equal_hash(self) -> None:
         d1 = "not_equal_hash1"
         d2 = "not_equal_hash2"
         f1 = "not_equal1"

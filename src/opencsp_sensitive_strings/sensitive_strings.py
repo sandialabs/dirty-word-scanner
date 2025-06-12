@@ -145,9 +145,9 @@ def is_dataset_and_shape(
             dset: h5py.Dataset = entity
             return True, dset.shape
         else:
-            return True, tuple()
+            return True, ()
     else:
-        return False, tuple()
+        return False, ()
 
 
 def get_groups_and_datasets(
@@ -173,7 +173,7 @@ def get_groups_and_datasets(
     visited: list[tuple[str, bool, tuple]] = []
 
     def visitor(name: str, entity: Union[h5py.Group, h5py.Dataset]) -> None:
-        visited.append(tuple([name, *is_dataset_and_shape(entity)]))
+        visited.append((name, *is_dataset_and_shape(entity)))
 
     if isinstance(hdf5_path_name_ext, str):
         hdf5_path_name_ext = os.path.normpath(hdf5_path_name_ext)
@@ -189,7 +189,7 @@ def get_groups_and_datasets(
         if not is_dataset:
             group_names.append(name)
         if is_dataset:
-            file_names_and_shapes.append(tuple([name, shape]))
+            file_names_and_shapes.append((name, shape))
 
     return group_names, file_names_and_shapes
 
@@ -272,7 +272,7 @@ def extract_hdf5_to_directory(
     possible_images: list[tuple[str, tuple[int]]] = []
     other_datasets: list[tuple[str, tuple[int]]] = []
     for dataset_name, shape in dataset_names_and_shapes:
-        possible_strings.append(tuple([dataset_name, shape]))
+        possible_strings.append((dataset_name, shape))
 
     # Extract strings into .txt files
     possible_strings_names = [t[0] for t in possible_strings]
@@ -920,7 +920,7 @@ class SensitiveStringsSearcher:
             logger.info(
                 f"Searching for sensitive strings in {len(files)} files"
             )
-        files = sorted(list(set(files)))
+        files = sorted(set(files))
 
         # Search for sensitive strings in files
         matches: dict[str, list[ssm.Match]] = {}

@@ -39,6 +39,7 @@ extend-select = [
     "ASYNC",
     "B",
     "BLE",
+    "C4",
     "ERA",
     "FBT",
     "FAST",

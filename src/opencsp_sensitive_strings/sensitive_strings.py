@@ -804,7 +804,7 @@ class SensitiveStringsSearcher:
             )
             np_image = np.array(img)
             rescaled = " (downscaled)"
-        if img.size[0] > 1080:
+        if img.size[1] > 1080:
             scale = 1080 / img.size[1]
             img = img.resize(
                 (int(scale * img.size[0]), int(scale * img.size[1]))

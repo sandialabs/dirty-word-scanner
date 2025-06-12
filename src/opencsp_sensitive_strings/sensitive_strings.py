@@ -560,7 +560,7 @@ class SensitiveStringsSearcher:
         # Extract the contents from the HDF5 file
         unzip_dir = self.get_tmp_dir()
         logger.info("")
-        logger.info(f"**Extracting HDF5 file to {unzip_dir}**")
+        logger.info("**Extracting HDF5 file**", extra={"directory": unzip_dir})
         h5_dir = extract_hdf5_to_directory(norm_path, unzip_dir)
 
         # Create a temporary allowed binary strings file
@@ -595,18 +595,23 @@ class SensitiveStringsSearcher:
             if len(hdf5_matches) > 0:
                 # Describe the issues with the HDF5 file
                 logger.warning(
-                    f"Found {len(hdf5_matches)} possible issues with the HDF5 "
-                    f"file '{relative_path_name_ext}':"
+                    "Found possible issues with the HDF5 file:",
+                    extra={
+                        "number_of_issues": len(hdf5_matches),
+                        "file": relative_path_name_ext,
+                    },
                 )
                 prev_relpath_name_ext = None
                 for file_relpath_name_ext in hdf5_matches:
                     if prev_relpath_name_ext != file_relpath_name_ext:
-                        logger.warning(f"    {file_relpath_name_ext}:")
+                        logger.warning("    %s:", file_relpath_name_ext)
                         prev_relpath_name_ext = file_relpath_name_ext
                     for match in hdf5_matches[file_relpath_name_ext]:
                         logger.warning(
-                            f"        {match.msg} (line {match.lineno}, col "
-                            f"{match.colno})"
+                            "        %s (line %d, col %d)",
+                            match.msg,
+                            match.lineno,
+                            match.colno,
                         )
 
                 # Ask the user about signing off
@@ -668,7 +673,7 @@ class SensitiveStringsSearcher:
         if cv_img is None:
             logger.info("")
             logger.info("Unknown binary file:")
-            logger.info("    " + relative_path_name_ext)
+            logger.info("    %s", relative_path_name_ext)
             logger.info(
                 "Is this unknown binary file safe to add, and doesn't contain "
                 "any sensitive information (y/n)?"
@@ -678,7 +683,7 @@ class SensitiveStringsSearcher:
             else:
                 resp = input("").strip()
                 val = "n" if len(resp) == 0 else resp[0]
-            logger.info(f"    User responded '{val}'")
+            logger.info("    User responded '%s'", val)
 
         else:
             logger.info("")
@@ -704,7 +709,7 @@ class SensitiveStringsSearcher:
                 else:
                     val = "?"
             if val.lower() in ["y", "n"]:
-                logger.info(f"    User responded '{val}'")
+                logger.info("    User responded '%s'", val)
             else:
                 logger.error(
                     "Did not respond with either 'y' or 'n'. Assuming 'n'."
@@ -918,8 +923,8 @@ class SensitiveStringsSearcher:
                 )
             )
             logger.info(
-                f"Searching for sensitive strings in {len(files)} tracked "
-                "files"
+                "Searching for sensitive strings in tracked files",
+                extra={"number_of_files": len(files)},
             )
         else:
             files = []
@@ -933,7 +938,8 @@ class SensitiveStringsSearcher:
                     )
                     files.append(relative_path)
             logger.info(
-                f"Searching for sensitive strings in {len(files)} files"
+                "Searching for sensitive strings in files",
+                extra={"number_of_files": len(files)},
             )
         files = sorted(set(files))
 
@@ -941,7 +947,7 @@ class SensitiveStringsSearcher:
         matches: dict[str, list[ssm.Match]] = {}
         for file_path_name_ext in files:
             if self.verbose:
-                logger.info(f"Searching file {file_path_name_ext}")
+                logger.info("Searching file %s", file_path_name_ext)
             rel_file_path = os.path.dirname(file_path_name_ext)
             file_name_ext = os.path.basename(file_path_name_ext)
             if self._is_file_in_cleared_cache(rel_file_path, file_name_ext):
@@ -981,16 +987,19 @@ class SensitiveStringsSearcher:
         # Print initial information about matching files and problematic binary files
         if len(matches) > 0:
             logger.error(
-                f"Found {len(matches)} files containing sensitive strings:"
+                "Found files containing sensitive strings:",
+                extra={"number_of_files": len(matches)},
             )
             for file in matches:
-                logger.error(f"    File {file}:")
+                logger.error("    File %s:", file)
                 for match in matches[file]:
-                    logger.error(f"        {match.msg}")
+                    logger.error("        %s", match.msg)
         if len(self.unfound_allowed_binary_files) > 0:
             logger.error(
-                f"Expected {len(self.unfound_allowed_binary_files)} binary "
-                "files that can't be found:"
+                "Expected binary files that can't be found:",
+                extra={
+                    "number_of_files": len(self.unfound_allowed_binary_files)
+                },
             )
             for file_ff in self.unfound_allowed_binary_files:
                 logger.info("")
@@ -999,8 +1008,8 @@ class SensitiveStringsSearcher:
                 )
         if len(self.unknown_binary_files) > 0:
             logger.warning(
-                f"Found {len(self.unknown_binary_files)} unexpected binary "
-                "files:"
+                "Found unexpected binary files:",
+                extra={"number_of_files": len(self.unknown_binary_files)},
             )
 
         # Deal with unknown binary files
@@ -1009,7 +1018,7 @@ class SensitiveStringsSearcher:
             for file_ff in unknowns_copy:
                 if self.verbose:
                     logger.info(
-                        f"Searching binary file {file_ff.relpath_name_ext}"
+                        "Searching binary file %s", file_ff.relpath_name_ext
                     )
                 logger.info("")
                 logger.info(
@@ -1038,19 +1047,21 @@ class SensitiveStringsSearcher:
                 else:  # if len(parsable_matches) == 0:
                     # This file is not ok. Tell the user why.
                     logger.error(
-                        f"    Found {len(parsable_matches)} possible "
-                        "sensitive issues in file "
-                        + self.norm_path(
-                            file_ff.relative_path, file_ff.name_ext
-                        )
-                        + "."
+                        "    Found possible sensitive issues in file.",
+                        extra={
+                            "number_of_issues": len(parsable_matches),
+                            "file": self.norm_path(
+                                file_ff.relative_path, file_ff.name_ext
+                            ),
+                        },
                     )
                     for _match in parsable_matches:
                         match: ssm.Match = _match
                         logger.error(
-                            "    "
-                            + match.msg
-                            + f" (line {match.lineno}, col {match.colno})"
+                            "    %s (line %d, col %d)",
+                            match.msg,
+                            match.lineno,
+                            match.colno,
                         )
 
                 # Date+time stamp the new allowed list csv files

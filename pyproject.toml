@@ -63,6 +63,8 @@ extend-select = [
     "RET",
     "RSE",
     "S",
+    "SIM",
+    "SLF",
     "T10",
     "T20",
     "YTT",

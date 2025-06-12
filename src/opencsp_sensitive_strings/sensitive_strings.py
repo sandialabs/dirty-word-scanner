@@ -436,9 +436,7 @@ class SensitiveStringsSearcher:
         cache_entry = fc.FileCache.for_file(
             self.root_search_dir, file_path, file_name_ext
         )
-        if cache_entry in self.cached_cleared_files:
-            return True
-        return False
+        return cache_entry in self.cached_cleared_files
 
     def _register_file_in_cleared_cache(
         self, file_path: str, file_name_ext: str
@@ -457,12 +455,14 @@ class SensitiveStringsSearcher:
         if ext == ".ipynb":
             is_binary_file = True
         elif self._is_img_ext(ext):
-            if ext in self._text_file_extensions:
-                is_binary_file = False
-            elif (
-                f"{rel_file_path}/{file_name_ext}"
-                in self._text_file_path_name_exts
-            ) or (file_name_ext in self._text_file_path_name_exts):
+            if (
+                ext in self._text_file_extensions
+                or (
+                    f"{rel_file_path}/{file_name_ext}"
+                    in self._text_file_path_name_exts
+                )
+                or (file_name_ext in self._text_file_path_name_exts)
+            ):
                 is_binary_file = False
             else:
                 is_binary_file = True
@@ -1139,7 +1139,7 @@ class SensitiveStringsSearcher:
         if not self.is_hdf5_searcher:
             for file_ff in self.unfound_allowed_binary_files:
                 fpne = f"{file_ff.relative_path}/{file_ff.name_ext}"
-                matches[fpne] = [] if (fpne not in matches) else matches[fpne]
+                matches[fpne] = matches.get(fpne, [])
                 matches[fpne].append(
                     ssm.Match(
                         0, 0, 0, "", "", None, f"Unfound binary file {fpne}"
@@ -1147,7 +1147,7 @@ class SensitiveStringsSearcher:
                 )
         for file_ff in self.unknown_binary_files:
             fpne = f"{file_ff.relative_path}/{file_ff.name_ext}"
-            matches[fpne] = [] if (fpne not in matches) else matches[fpne]
+            matches[fpne] = matches.get(fpne, [])
             matches[fpne].append(
                 ssm.Match(0, 0, 0, "", "", None, f"Unknown binary file {fpne}")
             )

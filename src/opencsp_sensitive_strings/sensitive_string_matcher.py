@@ -15,7 +15,7 @@ class Match:
     colend: int
     line: str
     line_part: str
-    matcher: "SensitiveStringMatcher"
+    matcher: SensitiveStringMatcher
     msg: str = ""
 
 

@@ -580,7 +580,7 @@ class SensitiveStringsSearcher:
             suffix=".csv",
             text=True,
         )
-        with open(self.allowed_binary_files_csv, "r") as fin:
+        with open(self.allowed_binary_files_csv) as fin:
             allowed_binary_files_lines = fin.readlines()
         with open(fd, "w") as fout:
             fout.writelines(allowed_binary_files_lines)

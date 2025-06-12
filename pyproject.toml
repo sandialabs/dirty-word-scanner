@@ -85,6 +85,7 @@ extend-select = [
     "TC",
     "TD",
     "TID",
+    "UP",
     "W",
     "YTT",
 ]
@@ -102,3 +103,6 @@ ignore = [
 
 # [tool.ruff.lint.pydocstyle]
 # convention = "google"
+
+[tool.ruff.lint.pyupgrade]
+keep-runtime-typing = true

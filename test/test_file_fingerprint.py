@@ -32,7 +32,7 @@ class TestFileFingerprint(unittest.TestCase):
         d2 = "equal2"
         f1 = "equal_file"
         f2 = "equal_file"
-        contents = "%0.10f" % random.Random().random()  # noqa: S311
+        contents = f"{random.Random().random():0.10f}"  # noqa: S311
 
         self._write_text_file(d1, f1, contents)
         self._write_text_file(d2, f2, contents)
@@ -50,7 +50,7 @@ class TestFileFingerprint(unittest.TestCase):
         d2 = "not_equal_relpath2"
         f1 = "equal_file"
         f2 = "equal_file"
-        contents = "%0.10f" % random.Random().random()  # noqa: S311
+        contents = f"{random.Random().random():0.10f}"  # noqa: S311
 
         self._write_text_file(d1, f1, contents)
         self._write_text_file(d2, f2, contents)
@@ -64,7 +64,7 @@ class TestFileFingerprint(unittest.TestCase):
         d2 = "not_equal_filename2"
         f1 = "equal_file1"
         f2 = "equal_file2"
-        contents = "%0.10f" % random.Random().random()  # noqa: S311
+        contents = f"{random.Random().random():0.10f}"  # noqa: S311
 
         self._write_text_file(d1, f1, contents)
         self._write_text_file(d2, f2, contents)
@@ -82,7 +82,7 @@ class TestFileFingerprint(unittest.TestCase):
         d2 = "not_equal_hash2"
         f1 = "not_equal1"
         f2 = "not_equal2"
-        contents = "%0.10f" % random.Random().random()  # noqa: S311
+        contents = f"{random.Random().random():0.10f}"  # noqa: S311
         contents1 = contents + " "
         contents2 = " " + contents
 

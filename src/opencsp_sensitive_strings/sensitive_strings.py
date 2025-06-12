@@ -10,7 +10,7 @@ import sys
 import tempfile
 import time
 from contextlib import suppress
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Union
 
 import cv2
@@ -379,7 +379,9 @@ class SensitiveStringsSearcher:
         self._interactive = False
         self.verify_all_on_behalf_of_user = False
         self.remove_unfound_binaries = False
-        self.date_time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.date_time_str = datetime.now(tz=timezone.utc).strftime(
+            "%Y%m%d_%H%M%S"
+        )
         self.tmp_dir_base = os.path.join(
             tempfile.gettempdir(), "SensitiveStringSearcher"
         )
@@ -1197,7 +1199,7 @@ if __name__ == "__main__":
         if args.cache_file
         else os.path.join(log_path, "cache.csv")
     )
-    date_time_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+    date_time_str = datetime.now(tz=timezone.utc).strftime("%Y%m%d_%H%M%S")
 
     log_already_exists = os.path.exists(log_path)
     path = os.path.dirname(log_path)

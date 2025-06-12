@@ -1,7 +1,7 @@
 import csv
 import dataclasses
-import datetime
 import os
+from datetime import datetime, timezone
 
 import src.opencsp_sensitive_strings.AbstractFileFingerprint as aff
 
@@ -35,8 +35,9 @@ class FileCache(aff.AbstractFileFingerprint):
         norm_path = os.path.normpath(
             os.path.join(root_path, relative_path, file_name_ext)
         )
-        modified_time = datetime.datetime.fromtimestamp(
-            os.stat(norm_path).st_mtime
+        modified_time = datetime.fromtimestamp(
+            os.stat(norm_path).st_mtime,
+            tz=timezone.utc,
         )
         last_modified = modified_time.strftime("%Y-%m-%d %H:%M:%S")
         return cls(relative_path, file_name_ext, last_modified)

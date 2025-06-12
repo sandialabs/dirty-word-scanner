@@ -1,7 +1,7 @@
 import os
 import time
 import unittest
-from datetime import datetime
+from datetime import datetime, timezone
 
 import src.opencsp_sensitive_strings.FileCache as fc
 
@@ -23,8 +23,8 @@ class test_FileCache(unittest.TestCase):
 
     def _delay_1_second(self) -> None:
         """sleeps up to 1 second so that the file modification time looks different"""
-        ts1 = datetime.now().strftime("%H%M%S")
-        while ts1 == datetime.now().strftime("%H%M%S"):
+        ts1 = datetime.now(tz=timezone.utc).strftime("%H%M%S")
+        while ts1 == datetime.now(tz=timezone.utc).strftime("%H%M%S"):
             time.sleep(0.05)
 
     def test_file_changed(self) -> None:

@@ -57,11 +57,8 @@ class FileFingerprint(aff.AbstractFileFingerprint):
         Basic implementation of from_csv. Subclasses are encouraged to extend this method.
         """
         input_path_file = os.path.join(file_path, file_name_ext)
-        data_rows: list[list[str]] = []
         with open(input_path_file) as csv_file:
-            reader = csv.reader(csv_file, delimiter=",")
-            for row in reader:
-                data_rows.append(row)
+            data_rows = list(csv.reader(csv_file, delimiter=","))
         return [cls.from_csv_line(row) for row in data_rows[1:]]
 
     def __lt__(self, other: "FileFingerprint") -> bool:

@@ -3,10 +3,10 @@ import time
 import unittest
 from datetime import datetime, timezone
 
-import src.opencsp_sensitive_strings.FileCache as fc
+import opencsp_sensitive_strings.file_cache as fc
 
 
-class test_FileCache(unittest.TestCase):
+class TestFileCache(unittest.TestCase):
     def setUp(self) -> None:
         path = os.path.dirname(__file__)
         self.data_dir = os.path.join(path, "data", "input", "FileCache")

@@ -1,10 +1,10 @@
 import os
 import unittest
 
-import src.opencsp_sensitive_strings.SensitiveStringMatcher as ssm
+import opencsp_sensitive_strings.sensitive_string_matcher as ssm
 
 
-class test_SensitiveStringMatcher(unittest.TestCase):
+class TestSensitiveStringMatcher(unittest.TestCase):
     def setUp(self) -> None:
         path = os.path.dirname(__file__)
         self.data_dir = os.path.join(path, "data", "input", "FileCache")

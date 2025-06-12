@@ -7,7 +7,7 @@ import numpy as np
 import src.opencsp_sensitive_strings.sensitive_strings as ss
 
 
-class test_sensitive_strings(unittest.TestCase):
+class TestSensitiveStrings(unittest.TestCase):
     def setUp(self) -> None:
         path = os.path.dirname(__file__)
         self.data_dir = os.path.join(

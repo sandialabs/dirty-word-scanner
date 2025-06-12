@@ -2,10 +2,10 @@ import os
 import random
 import unittest
 
-import src.opencsp_sensitive_strings.FileFingerprint as ff
+import opencsp_sensitive_strings.file_fingerprint as ff
 
 
-class test_FileFingerprint(unittest.TestCase):
+class TestFileFingerprint(unittest.TestCase):
     def setUp(self) -> None:
         path = os.path.dirname(__file__)
         self.data_dir = os.path.join(path, "data", "input", "FileFingerprint")

@@ -19,9 +19,9 @@ import h5py
 import numpy as np
 from PIL import Image, UnidentifiedImageError
 
-import src.opencsp_sensitive_strings.FileCache as fc
-import src.opencsp_sensitive_strings.FileFingerprint as ff
-import src.opencsp_sensitive_strings.SensitiveStringMatcher as ssm
+import opencsp_sensitive_strings.file_cache as fc
+import opencsp_sensitive_strings.file_fingerprint as ff
+import opencsp_sensitive_strings.sensitive_string_matcher as ssm
 
 logger = logging.getLogger(__name__)
 pil_image_formats_rw = [

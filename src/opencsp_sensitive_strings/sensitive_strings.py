@@ -5,6 +5,7 @@ import copy
 import csv
 import logging
 import os
+import shlex
 import shutil
 import subprocess
 import sys
@@ -897,33 +898,28 @@ class SensitiveStringsSearcher:
         if self.git_files_only:
             # If this script is evaluated form MobaXTerm, then the
             # built-in 16-bit version of git will fail.
-            git = shutil.which("git")
+            if (git := shutil.which("git")) is None:
+                message = "'git' executable not found."
+                raise RuntimeError(message)
             if "mobaxterm" in git:
                 git = "git"
-            git_committed = subprocess.run(  # noqa: S603
-                [git, "ls-tree", "--full-tree", "--name-only", "-r", "HEAD"],
-                check=True,
-                cwd=self.root_search_dir,
-                stdout=subprocess.PIPE,
-                text=True,
-            )
-            git_added = subprocess.run(  # noqa: S603
-                [git, "diff", "--name-only", "--cached", "--diff-filter=A"],
-                check=True,
-                cwd=self.root_search_dir,
-                stdout=subprocess.PIPE,
-                text=True,
-            )
-            files = [line.val for line in git_committed + git_added]
-            # don't include "git rm"'d files
-            files = list(
-                filter(
-                    lambda file: os.path.isfile(
-                        os.path.join(self.root_search_dir, file)
-                    ),
-                    files,
+            files: list[str] = []
+            for command in [
+                f"{git} ls-tree --full-tree --name-only -r HEAD",
+                f"{git} diff --name-only --cached --diff-filter=A",
+            ]:
+                completed_process = subprocess.run(  # noqa: S603
+                    shlex.split(command),
+                    check=True,
+                    cwd=self.root_search_dir,
+                    stdout=subprocess.PIPE,
+                    text=True,
                 )
-            )
+                files.extend(
+                    file
+                    for file in completed_process.stdout.splitlines()
+                    if os.path.isfile(os.path.join(self.root_search_dir, file))
+                )
             logger.info(
                 "Searching for sensitive strings in tracked files",
                 extra={"number_of_files": len(files)},

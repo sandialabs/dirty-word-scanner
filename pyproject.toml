@@ -30,6 +30,7 @@ test = [
 
 [tool.ruff]
 line-length = 79
+target-version = "py39"
 
 [tool.ruff.lint]
 extend-select = [
@@ -40,10 +41,16 @@ extend-select = [
     "B",
     "BLE",
     "C4",
+    "DJ",
     "DTZ",
+    "EM",
     "ERA",
-    "FBT",
+    "EXE",
+    "FA",
     "FAST",
+    "FBT",
+    "FIX",
     "S",
+    "T10",
     "YTT",
 ]

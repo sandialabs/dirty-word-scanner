@@ -18,12 +18,17 @@ class FileFingerprint(aff.AbstractFileFingerprint):
 
     @staticmethod
     def csv_header(delimiter: str = ",") -> str:
-        """Static method. Takes at least one parameter 'delimiter' and returns the string that represents the csv header."""
+        """Returns the string that represents the CSV header."""
         keys = list(dataclasses.asdict(FileFingerprint("", "", "", "")).keys())
         return delimiter.join(keys)
 
     def to_csv_line(self, delimiter: str = ",") -> str:
-        """Return a string representation of this instance, to be written to a csv file. Does not include a trailing newline."""
+        """
+        Return a string representation of this instance.
+
+        To be written to a CSV file.  Does not include a trailing
+        newline.
+        """
         values = list(dataclasses.asdict(self).values())
         return delimiter.join([str(value) for value in values])
 
@@ -31,7 +36,12 @@ class FileFingerprint(aff.AbstractFileFingerprint):
     def from_csv_line(
         cls, data: list[str]
     ) -> tuple["FileFingerprint", list[str]]:
-        """Construct an instance of this class from the pre-split csv line 'data'. Also return any leftover portion of the csv line that wasn't used."""
+        """
+        Construct an instance of this class from CSV line data.
+
+        Also return any leftover portion of the CSV line that wasn't
+        used.
+        """
         root, name_ext, size, hash_hex = data[0], data[1], data[2], data[3]
         size = int(size)
         return cls(root, name_ext, size, hash_hex), data[4:]
@@ -52,9 +62,13 @@ class FileFingerprint(aff.AbstractFileFingerprint):
     def from_csv(
         cls, file_path: str, file_name_ext: str
     ) -> list[tuple["FileFingerprint", list[str]]]:
-        """Return N instances of this class from a csv file with a header and N lines.
+        """
+        Return N instances of this class from a CSV file.
 
-        Basic implementation of from_csv. Subclasses are encouraged to extend this method.
+        One per line in the CSV file, excluding the header.
+
+        Note:
+            Subclasses are encouraged to extend this method.
         """
         input_path_file = os.path.join(file_path, file_name_ext)
         with open(input_path_file) as csv_file:
@@ -63,7 +77,10 @@ class FileFingerprint(aff.AbstractFileFingerprint):
 
     def __lt__(self, other: "FileFingerprint") -> bool:
         if not isinstance(other, FileFingerprint):
-            message = f"'other' is not of type FileFingerprint but instead of type {type(other)}"
+            message = (
+                "'other' is not of type FileFingerprint but instead of type "
+                + type(other)
+            )
             logger.error(message)
             raise TypeError(message)
         if self.relative_path == other.relative_path:

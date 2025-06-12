@@ -6,9 +6,9 @@ from abc import ABC
 @dataclasses.dataclass()
 class AbstractFileFingerprint(ABC):
     relative_path: str
-    """ Path to the file, from the root search directory. Usually something like "opencsp/common/lib/tool". """
+    """Path to the file, from the root search directory."""
     name_ext: str
-    """ "name.ext" of the file. """
+    """'name.ext' of the file."""
 
     @property
     def relpath_name_ext(self) -> str:

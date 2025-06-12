@@ -22,7 +22,11 @@ class TestFileCache(unittest.TestCase):
             pass
 
     def _delay_1_second(self) -> None:
-        """sleeps up to 1 second so that the file modification time looks different"""
+        """
+        Sleep up to 1 second.
+
+        So the file modification time looks different.
+        """
         ts1 = datetime.now(tz=timezone.utc).strftime("%H%M%S")
         while ts1 == datetime.now(tz=timezone.utc).strftime("%H%M%S"):
             time.sleep(0.05)

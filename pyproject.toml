@@ -45,6 +45,7 @@ extend-select = [
     # "C90",
     "DJ",
     "DTZ",
+    "E",
     "EM",
     "ERA",
     "EXE",

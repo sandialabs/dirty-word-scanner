@@ -151,20 +151,22 @@ def is_dataset_and_shape(
 def get_groups_and_datasets(
     hdf5_path_name_ext: Union[str, h5py.File],
 ) -> tuple[list[str], list[tuple[str, tuple[int]]]]:
-    """Get the structure of an HDF5 file, including all group and dataset names, and the dataset shapes.
+    """
+    Get the structure of an HDF5 file.
 
-    Parameters
-    ----------
-    hdf5_path_name_ext : Union[str, h5py.File]
-        The HDF5 file to parse the structure of.
+    Including all group and dataset names, and the dataset shapes.
 
-    Returns
-    -------
-    group_names: list[str]
-        The absolute names of all the groups in the file. For example: "foo/bar"
-    file_names_and_shapes: list[ tuple[str,tuple[int]] ]
-        The absolute names of all the datasets in the file, and their shapes.
-        For example: "foo/bar/baz", (1920,1080)
+    Parameters:
+        hdf5_path_name_ext:  The HDF5 file to parse the structure of.
+
+    Returns:
+        group_names
+            The absolute names of all the groups in the file.  For
+            example:  ``"foo/bar"``.
+        file_names_and_shapes
+            The absolute names of all the datasets in the file, and
+            their shapes.  For example:  ``"foo/bar/baz",
+            (1920, 1080)``.
     """
     group_names: list[str] = []
     file_names_and_shapes: list[tuple[str, tuple[int]]] = []
@@ -239,23 +241,20 @@ def extract_hdf5_to_directory(
 ) -> str:
     """Unpacks the given HDF5 file into the given destination directory.
 
-    Unpacks the given HDF5 file into the given destination directory. A new
-    directory is created in the destination with the same name as the hdf5 file.
-    String values are extracted as .txt files, and images are extracted as .png
-    files. Everything else is saved with numpy as .npy files.
+    Unpacks the given HDF5 file into the given destination directory.  A
+    new directory is created in the destination with the same name as
+    the HDF5 file.  String values are extracted as ``.txt`` files, and
+    images are extracted as ``.png`` files.  Everything else is saved
+    with numpy as ``.npy`` files.
 
-    Parameters
-    ----------
-    hdf5_path_name_ext : str
-        The HDF5 file to unpack.
-    destination_dir : str
-        The directory in which to create a directory for the HDF5 file.
+    Parameters:
+        hdf5_path_name_ext:  The HDF5 file to unpack.
+        destination_dir:  The directory in which to create a directory
+            for the HDF5 file.
 
-    Returns
-    -------
-    output_dir: str
-        The path to the newly created directory into which the HDF5 files were
-        extracted into.
+    Returns:
+        The path to the newly created directory into which the HDF5
+        files were extracted.
     """
     norm_path = os.path.normpath(hdf5_path_name_ext)
     name = os.path.splitext(norm_path)[1]
@@ -307,7 +306,8 @@ def extract_hdf5_to_directory(
 
             # we assume images have 2 or 3 dimensions
             if (len(shape) == 2) or (len(shape) == 3):
-                # we assume shapes are at least 10x10 pixels and have an aspect ratio of at least 10:1
+                # We assume shapes are at least 10x10 pixels and have an
+                # aspect ratio of at least 10:1.
                 aspect_ratio = max(shape[0], shape[1]) / min(
                     shape[0], shape[1]
                 )
@@ -488,11 +488,18 @@ class SensitiveStringsSearcher:
     def _enqueue_unknown_binary_files_for_later_processing(
         self, rel_file_path: str, file_name_ext: str
     ) -> None:
-        """If the given file is recognized as an allowed file, and it's fingerprint matches the allowed file, then we
-        can dismiss it from the list of unfound files and add it to the list of the accepted files.
+        """
+        Determine what to do with binary files.
 
-        However, if the given file isn't recognized or it's fingerprint is different, then add it to the unknown list,
-        to be dealt with later."""
+        If the given file is recognized as an allowed file, and its
+        fingerprint matches the allowed file, then we can dismiss it
+        from the list of unfound files and add it to the list of the
+        accepted files.
+
+        However, if the given file isn't recognized or its fingerprint
+        is different, then add it to the unknown list, to be dealt with
+        later.
+        """
         file_ff = ff.FileFingerprint.for_file(
             self.root_search_dir, rel_file_path, file_name_ext
         )
@@ -586,7 +593,8 @@ class SensitiveStringsSearcher:
         error = hdf5_searcher.search_files()
         hdf5_matches = hdf5_searcher.matches
         if error != 0:
-            # There was an error, but the user may want to sign off on the file anyways.
+            # There was an error, but the user may want to sign off on
+            # the file anyway.
             if len(hdf5_matches) > 0:
                 # Describe the issues with the HDF5 file
                 logger.warning(
@@ -654,7 +662,8 @@ class SensitiveStringsSearcher:
                 raise RuntimeError(message)
 
         # Remove the temporary files created for the searcher.
-        # Files created by the searcher should be removed in its __del__() method.
+        # Files created by the searcher should be removed in its
+        # __del__() method.
         os.remove(tmp_allowed_binary_csv)
 
         return matches
@@ -812,7 +821,8 @@ class SensitiveStringsSearcher:
         self.matches.clear()
 
         if self.is_hdf5_searcher:
-            # hdf5 searchers shouldn't be aware of what files are contained in the hdf5 file
+            # HDF5 searchers shouldn't be aware of what files are
+            # contained in the HDF5 file.
             self.allowed_binary_files.clear()
         else:
             self.allowed_binary_files = [
@@ -865,7 +875,8 @@ class SensitiveStringsSearcher:
         self.has_backed_up_allowed_binaries_csv = True
 
     def update_allowed_binaries_csv(self) -> None:
-        # Overwrite the allowed list csv file with the updated allowed_binary_files
+        # Overwrite the allowed list CSV file with the updated
+        # allowed_binary_files.
         if not self.has_backed_up_allowed_binaries_csv:
             self.create_backup_allowed_binaries_csv()
         path = os.path.dirname(self.allowed_binary_files_csv)
@@ -885,8 +896,8 @@ class SensitiveStringsSearcher:
     def search_files(self) -> int:
         self._init_files_lists()
         if self.git_files_only:
-            # If this script is evaluated form MobaXTerm, then the built-in
-            # 16-bit version of git will fail.
+            # If this script is evaluated form MobaXTerm, then the
+            # built-in 16-bit version of git will fail.
             git = shutil.which("git")
             if "mobaxterm" in git:
                 git = "git"
@@ -974,7 +985,8 @@ class SensitiveStringsSearcher:
             self.unfound_allowed_binary_files.clear()
             self.update_allowed_binaries_csv()
 
-        # Print initial information about matching files and problematic binary files
+        # Print initial information about matching files and problematic
+        # binary files.
         if len(matches) > 0:
             logger.error(
                 "Found files containing sensitive strings:",
@@ -1016,20 +1028,22 @@ class SensitiveStringsSearcher:
                 )
                 num_signed_binary_files = 0
 
-                # Search for sensitive string matches, and interactively ask the user
-                # about unparseable binary files.
+                # Search for sensitive string matches, and interactively
+                # ask the user about unparseable binary files.
                 parsable_matches: list[ssm.Match] = self.search_binary_file(
                     file_ff
                 )
 
                 if len(parsable_matches) == 0:
                     # No matches: this file is ok.
-                    # Add the validated and/or signed off file to the allowed binary files csv
+                    # Add the validated and/or signed off file to the
+                    # allowed binary files CSV.
                     self.unknown_binary_files.remove(file_ff)
                     self.allowed_binary_files.append(file_ff)
 
-                    # Overwrite the allowed list csv file with the updated allowed_binary_files
-                    # and make a backup as necessary.
+                    # Overwrite the allowed list CSV file with the
+                    # updated allowed_binary_files and make a backup as
+                    # necessary.
                     self.update_allowed_binaries_csv()
 
                     num_signed_binary_files += 1

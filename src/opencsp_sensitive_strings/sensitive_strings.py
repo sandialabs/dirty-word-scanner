@@ -12,7 +12,7 @@ import tempfile
 import time
 from contextlib import suppress
 from datetime import datetime, timezone
-from typing import Union
+from typing import Optional, Union
 
 import cv2
 import h5py
@@ -367,15 +367,15 @@ def extract_hdf5_to_directory(
 
 
 class SensitiveStringsSearcher:
-    _text_file_extensions = [".txt", ".csv", ".py", ".md", ".rst"]
-    _text_file_path_name_exts = [".coverageac"]
+    _text_file_extensions = (".txt", ".csv", ".py", ".md", ".rst")
+    _text_file_path_name_exts = (".coverageac",)
 
     def __init__(
         self,
         root_search_dir: str,
         sensitive_strings_csv: str,
         allowed_binary_files_csv: str,
-        cache_file_csv: str = None,
+        cache_file_csv: Optional[str] = None,
     ) -> None:
         self.root_search_dir = root_search_dir
         self.sensitive_strings_csv = sensitive_strings_csv
@@ -680,7 +680,7 @@ class SensitiveStringsSearcher:
         self,
         relative_path_name_ext: str,
         cv_img: Image.Image = None,
-        cv_title: str = None,
+        cv_title: Optional[str] = None,
     ) -> bool:
         if cv_img is None:
             logger.info("")
@@ -770,7 +770,7 @@ class SensitiveStringsSearcher:
     def interactive_image_sign_off(
         self,
         np_image: np.ndarray = None,
-        description: str = None,
+        description: Optional[str] = None,
         file_ff: ff.FileFingerprint = None,
     ) -> bool:
         if (np_image is None) and (file_ff is not None):

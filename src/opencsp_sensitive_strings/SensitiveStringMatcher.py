@@ -151,7 +151,8 @@ class SensitiveStringMatcher:
         self, match: Match, pattern: Union[re.Pattern, str], line_context: str
     ) -> None:
         log_msg = (
-            f"'{self.name}' string matched to pattern '{pattern}' on line {match.lineno} "
-            + f'[{match.colno}:{match.colend}]: "{line_context.strip()}" ("{match.line.strip()}")'
+            f"'{self.name}' string matched to pattern '{pattern}' on line "
+            f"{match.lineno} [{match.colno}:{match.colend}]: "
+            f'"{line_context.strip()}" ("{match.line.strip()}")'
         )
         match.msg = log_msg

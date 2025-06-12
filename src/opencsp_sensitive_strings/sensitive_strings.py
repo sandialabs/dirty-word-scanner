@@ -595,7 +595,8 @@ class SensitiveStringsSearcher:
             if len(hdf5_matches) > 0:
                 # Describe the issues with the HDF5 file
                 logger.warning(
-                    f"Found {len(hdf5_matches)} possible issues with the HDF5 file '{relative_path_name_ext}':"
+                    f"Found {len(hdf5_matches)} possible issues with the HDF5 "
+                    f"file '{relative_path_name_ext}':"
                 )
                 prev_relpath_name_ext = None
                 for file_relpath_name_ext in hdf5_matches:
@@ -604,7 +605,8 @@ class SensitiveStringsSearcher:
                         prev_relpath_name_ext = file_relpath_name_ext
                     for match in hdf5_matches[file_relpath_name_ext]:
                         logger.warning(
-                            f"        {match.msg} (line {match.lineno}, col {match.colno})"
+                            f"        {match.msg} (line {match.lineno}, col "
+                            f"{match.colno})"
                         )
 
                 # Ask the user about signing off
@@ -631,8 +633,10 @@ class SensitiveStringsSearcher:
                             matches.append(match)
             else:  # if len(hdf5_matches) > 0:
                 message = (
-                    "Programmer error in SensitiveStringsSearcher.search_hdf5_files(): "
-                    + f"Errors were returned for file {relative_path_name_ext} but there were 0 matches found.",
+                    "Programmer error in SensitiveStringsSearcher."
+                    "search_hdf5_files(): Errors were returned for file "
+                    f"{relative_path_name_ext} but there were 0 matches "
+                    "found.",
                 )
                 logger.error(message)
                 raise RuntimeError(message)
@@ -641,8 +645,10 @@ class SensitiveStringsSearcher:
             # There were no errors, matches should be empty
             if len(hdf5_matches) > 0:
                 message = (
-                    "Programmer error in SensitiveStringsSearcher.search_hdf5_files(): "
-                    + f"No errors were returned for file {relative_path_name_ext} but there were {len(hdf5_matches)} > 0 matches found.",
+                    "Programmer error in SensitiveStringsSearcher."
+                    "search_hdf5_files(): No errors were returned for file "
+                    f"{relative_path_name_ext} but there were "
+                    f"{len(hdf5_matches)} > 0 matches found.",
                 )
                 logger.error(message)
                 raise RuntimeError(message)
@@ -664,7 +670,8 @@ class SensitiveStringsSearcher:
             logger.info("Unknown binary file:")
             logger.info("    " + relative_path_name_ext)
             logger.info(
-                "Is this unknown binary file safe to add, and doesn't contain any sensitive information (y/n)?"
+                "Is this unknown binary file safe to add, and doesn't contain "
+                "any sensitive information (y/n)?"
             )
             if self.verify_all_on_behalf_of_user:
                 val = "y"
@@ -676,7 +683,8 @@ class SensitiveStringsSearcher:
         else:
             logger.info("")
             logger.info(
-                "Is this image safe to add, and doesn't contain any sensitive information (y/n)?"
+                "Is this image safe to add, and doesn't contain any sensitive "
+                "information (y/n)?"
             )
             if self.verify_all_on_behalf_of_user:
                 val = "y"
@@ -770,7 +778,9 @@ class SensitiveStringsSearcher:
                     img.close()
                     return self.interactive_image_sign_off(
                         np_image=np_image,
-                        description=f"{file_ff.relative_path}/{file_ff.name_ext}",
+                        description=(
+                            f"{file_ff.relative_path}/{file_ff.name_ext}"
+                        ),
                     )
                 else:
                     return self.verify_interactively(file_ff.relative_path)
@@ -908,7 +918,8 @@ class SensitiveStringsSearcher:
                 )
             )
             logger.info(
-                f"Searching for sensitive strings in {len(files)} tracked files"
+                f"Searching for sensitive strings in {len(files)} tracked "
+                "files"
             )
         else:
             files = []
@@ -978,7 +989,8 @@ class SensitiveStringsSearcher:
                     logger.error(f"        {match.msg}")
         if len(self.unfound_allowed_binary_files) > 0:
             logger.error(
-                f"Expected {len(self.unfound_allowed_binary_files)} binary files that can't be found:"
+                f"Expected {len(self.unfound_allowed_binary_files)} binary "
+                "files that can't be found:"
             )
             for file_ff in self.unfound_allowed_binary_files:
                 logger.info("")
@@ -987,7 +999,8 @@ class SensitiveStringsSearcher:
                 )
         if len(self.unknown_binary_files) > 0:
             logger.warning(
-                f"Found {len(self.unknown_binary_files)} unexpected binary files:"
+                f"Found {len(self.unknown_binary_files)} unexpected binary "
+                "files:"
             )
 
         # Deal with unknown binary files
@@ -1025,7 +1038,12 @@ class SensitiveStringsSearcher:
                 else:  # if len(parsable_matches) == 0:
                     # This file is not ok. Tell the user why.
                     logger.error(
-                        f"    Found {len(parsable_matches)} possible sensitive issues in file {self.norm_path(file_ff.relative_path, file_ff.name_ext)}."
+                        f"    Found {len(parsable_matches)} possible "
+                        "sensitive issues in file "
+                        + self.norm_path(
+                            file_ff.relative_path, file_ff.name_ext
+                        )
+                        + "."
                     )
                     for _match in parsable_matches:
                         match: ssm.Match = _match
@@ -1061,9 +1079,10 @@ class SensitiveStringsSearcher:
             for file_cf in self.new_cached_cleared_files:
                 if file_ff.eq_aff(file_cf):
                     message = (
-                        "Programmer error in sensitive_strings.search_files(): "
-                        + "No binary files should be in the cache, but at least 1 such file was found: "
-                        + f'"{file_cf.relative_path}/{file_cf.name_ext}"',
+                        "Programmer error in sensitive_strings."
+                        "search_files(): No binary files should be in the "
+                        "cache, but at least 1 such file was found: "
+                        f'"{file_cf.relative_path}/{file_cf.name_ext}"',
                     )
                     logger.error(message)
                     raise RuntimeError(message)
@@ -1103,7 +1122,8 @@ class SensitiveStringsSearcher:
         info_or_warn(f"Found {len(matches)} sensitive string matches")
         if len(self.unfound_allowed_binary_files) > 0:
             info_or_warn(
-                f"Did not find {len(self.unfound_allowed_binary_files)} expected binary files"
+                f"Did not find {len(self.unfound_allowed_binary_files)} "
+                "expected binary files"
             )
         else:
             info_or_warn(
@@ -1142,21 +1162,26 @@ if __name__ == "__main__":
         "--no-interactive",
         action="store_true",
         dest="ninteractive",
-        help="Don't interactively ask the user about unknown binary files. Simply fail instead.",
+        help="Don't interactively ask the user about unknown binary files. "
+        "Simply fail instead.",
     )
     parser.add_argument(
         "--accept-all",
         action="store_true",
         dest="acceptall",
-        help="Don't interactively ask the user about unknown binary files. Simply accept all as verified on the user's behalf. "
-        + "This can be useful when you're confident that the only changes have been that the binary files have moved but not changed.",
+        help="Don't interactively ask the user about unknown binary files. "
+        "Simply accept all as verified on the user's behalf. This can be "
+        "useful when you're confident that the only changes have been that "
+        "the binary files have moved but not changed.",
     )
     parser.add_argument(
         "--accept-unfound",
         action="store_true",
         dest="acceptunfound",
-        help="Don't fail because of unfound expected binary files. Instead remove the expected files from the list of allowed binaries. "
-        + "This can be useful when you're confident that the only changes have been that the binary files have moved but not changed.",
+        help="Don't fail because of unfound expected binary files. Instead "
+        "remove the expected files from the list of allowed binaries. This "
+        "can be useful when you're confident that the only changes have been "
+        "that the binary files have moved but not changed.",
     )
     parser.add_argument(
         "--log-dir",
@@ -1165,7 +1190,8 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--sensitive-strings",
-        help="The CSV file defining the sensitive string patterns to search for.",
+        help="The CSV file defining the sensitive string patterns to search "
+        "for.",
         required=True,
     )
     parser.add_argument(

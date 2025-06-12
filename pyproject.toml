@@ -50,6 +50,8 @@ extend-select = [
     "FAST",
     "FBT",
     "FIX",
+    "INT",
+    "ISC",
     "S",
     "T10",
     "YTT",

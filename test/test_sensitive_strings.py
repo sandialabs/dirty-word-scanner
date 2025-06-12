@@ -36,7 +36,7 @@ class test_sensitive_strings(unittest.TestCase):
         )
         self.patcher_copy = patch(
             "src.opencsp_sensitive_strings.sensitive_strings.shutil.copyfile",
-            lambda *args, **kwargs: None,
+            lambda *_args, **_kwargs: None,
         )
         self.patcher_update.start()
         self.patcher_copy.start()

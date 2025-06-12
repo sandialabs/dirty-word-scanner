@@ -37,6 +37,7 @@ extend-select = [
     "A",
     "AIR",
     "ANN",
+    "ARG",
     "ASYNC",
     "B",
     "BLE",
@@ -65,8 +66,12 @@ extend-select = [
     "S",
     "SIM",
     "SLF",
+    "SLOT",
     "T10",
     "T20",
+    "TC",
+    "TD",
+    "TID",
     "YTT",
 ]
 

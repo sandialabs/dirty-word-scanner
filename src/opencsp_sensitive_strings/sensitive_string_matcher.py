@@ -51,27 +51,27 @@ class SensitiveStringMatcher:
                     remaining_negative_match = True
 
             else:
-                if next_is_regex or all_regex:
-                    pattern = re.compile(pattern)
-                else:
-                    pass
-
+                pattern_to_save = (
+                    re.compile(pattern)
+                    if (next_is_regex or all_regex)
+                    else pattern
+                )
                 if not remaining_negative_match:
-                    self.patterns.append(pattern)
+                    self.patterns.append(pattern_to_save)
                 else:
-                    self.neg_patterns.append(pattern)
+                    self.neg_patterns.append(pattern_to_save)
 
                 next_is_regex = False
 
         # case insensitive matching
         if not self.case_sensitive:
-            for patterns in [self.patterns, self.neg_patterns]:
-                for i, pattern in enumerate(patterns):
+            for pattern_list in [self.patterns, self.neg_patterns]:
+                for i, pattern in enumerate(pattern_list):
                     if isinstance(pattern, str):
-                        patterns[i] = pattern.lower()
+                        pattern_list[i] = pattern.lower()
                     else:
                         p: re.Pattern = pattern
-                        patterns[i] = re.compile(p.pattern.lower())
+                        pattern_list[i] = re.compile(p.pattern.lower())
 
     def _search_pattern(
         self, ihaystack: str, pattern: Union[re.Pattern, str]
@@ -125,9 +125,7 @@ class SensitiveStringMatcher:
                     matching[pattern] = span
 
             # Register the matches
-            for pattern in matching:
-                span = matching[pattern]
-
+            for pattern, span in matching.items():
                 start, end = span[0], span[1]
                 line_part = line[start:end]
                 line_context = f"`{line_part}`"

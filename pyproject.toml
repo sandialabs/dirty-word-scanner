@@ -43,12 +43,14 @@ extend-select = [
     "BLE",
     "C4",
     # "C90",
+    # "D",
     "DJ",
     "DTZ",
     "E",
     "EM",
     "ERA",
     "EXE",
+    "F",
     "FA",
     "FAST",
     "FBT",
@@ -65,7 +67,9 @@ extend-select = [
     "NPY",
     "PD",
     "PERF",
+    "PGH",
     "PIE",
+    "PL",
     "PT",
     # "PTH",
     "PYI",
@@ -81,8 +85,20 @@ extend-select = [
     "TC",
     "TD",
     "TID",
+    "W",
     "YTT",
+]
+ignore = [
+#     "D212",
+    "PLR0912",  # Remove this after reducing complexity.
+    "PLR0915",  # Remove this after reducing complexity.
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"**/test_*.py" = ["S101"]
+"**/test_*.py" = [
+    "PLR2004",
+    "S101",
+]
+
+# [tool.ruff.lint.pydocstyle]
+# convention = "google"

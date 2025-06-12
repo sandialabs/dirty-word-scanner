@@ -24,7 +24,12 @@ import opencsp_sensitive_strings.file_fingerprint as ff
 import opencsp_sensitive_strings.sensitive_string_matcher as ssm
 
 logger = logging.getLogger(__name__)
-pil_image_formats_rw = [
+EIGHT_BIT_DEPTH = 255
+FULL_DEFINITION_SIZE = (1920, 1080)
+MAX_ASPECT_RATIO = 10
+MAX_FILE_SIZE = 1e6
+MIN_PIXELS = 10
+PIL_IMAGE_FORMATS_RW = [
     "blp",
     "bmp",
     "dds",
@@ -107,7 +112,7 @@ def numpy_to_image(
         int_type = arr.dtype
 
     # rescale down to 8-bit if bitdepth is too large
-    if np.iinfo(int_type).max > 255:
+    if np.iinfo(int_type).max > EIGHT_BIT_DEPTH:
         if rescale_or_clip == "rescale":
             if rescale_max < 0:
                 rescale_max = np.max(arr)
@@ -305,20 +310,23 @@ def extract_hdf5_to_directory(
             np_image = np.array(h5_val).squeeze()
 
             # we assume images have 2 or 3 dimensions
-            if (len(shape) == 2) or (len(shape) == 3):
+            if (len(shape) == 2) or (len(shape) == 3):  # noqa: PLR2004
                 # We assume shapes are at least 10x10 pixels and have an
                 # aspect ratio of at least 10:1.
                 aspect_ratio = max(shape[0], shape[1]) / min(
                     shape[0], shape[1]
                 )
-                if (shape[0] >= 10 and shape[1] >= 10) and (
-                    aspect_ratio < 10.001
+                if (shape[0] >= MIN_PIXELS and shape[1] >= MIN_PIXELS) and (
+                    aspect_ratio < MAX_ASPECT_RATIO + 1e-3
                 ):
                     dataset_path_name_ext = _create_dataset_path(
                         hdf5_dir, possible_images[i][0], ".png"
                     )
                     # assumed grayscale or RGB
-                    if (len(shape) == 2) or (shape[2] in [1, 3]):
+                    if (
+                        len(shape) == 2  # noqa: PLR2004
+                        or shape[2] in [1, 3]
+                    ):
                         img = numpy_to_image(np_image)
                         img.save(dataset_path_name_ext)
                     else:  # assumed multiple images
@@ -326,11 +334,11 @@ def extract_hdf5_to_directory(
                         dn, de = os.path.splitext(
                             os.path.basename(dataset_path_name_ext)
                         )
-                        for i in range(shape[2]):
+                        for index in range(shape[2]):
                             dataset_path_name_ext_i = os.path.join(
-                                dp, f"{dn}_{i}{de}"
+                                dp, f"{dn}_{index}{de}"
                             )
-                            np_single_image = np_image[:, :, i].squeeze()
+                            np_single_image = np_image[:, :, index].squeeze()
                             img = numpy_to_image(np_single_image)
                             img.save(dataset_path_name_ext_i)
                 else:
@@ -466,7 +474,8 @@ class SensitiveStringsSearcher:
             else:
                 is_binary_file = True
         elif (
-            os.path.getsize(self.norm_path(rel_file_path, file_name_ext)) > 1e6
+            os.path.getsize(self.norm_path(rel_file_path, file_name_ext))
+            > MAX_FILE_SIZE
         ):
             # assume any file > 1MB is a binary file, in order to prevent
             # sensitive_strings from taking hours to check these files
@@ -649,17 +658,16 @@ class SensitiveStringsSearcher:
                 logger.error(message)
                 raise RuntimeError(message)
 
-        else:
-            # There were no errors, matches should be empty
-            if len(hdf5_matches) > 0:
-                message = (
-                    "Programmer error in SensitiveStringsSearcher."
-                    "search_hdf5_files(): No errors were returned for file "
-                    f"{relative_path_name_ext} but there were "
-                    f"{len(hdf5_matches)} > 0 matches found.",
-                )
-                logger.error(message)
-                raise RuntimeError(message)
+        # There were no errors, matches should be empty
+        elif len(hdf5_matches) > 0:
+            message = (
+                "Programmer error in SensitiveStringsSearcher."
+                "search_hdf5_files(): No errors were returned for file "
+                f"{relative_path_name_ext} but there were "
+                f"{len(hdf5_matches)} > 0 matches found.",
+            )
+            logger.error(message)
+            raise RuntimeError(message)
 
         # Remove the temporary files created for the searcher.
         # Files created by the searcher should be removed in its
@@ -734,7 +742,7 @@ class SensitiveStringsSearcher:
         )
         matches: list[ssm.Match] = []
 
-        if ext.lower().lstrip(".") in pil_image_formats_rw:
+        if ext.lower().lstrip(".") in PIL_IMAGE_FORMATS_RW:
             if self.interactive:
                 if self.interactive_image_sign_off(file_ff=binary_file):
                     return []
@@ -749,16 +757,15 @@ class SensitiveStringsSearcher:
         elif ext.lower() == ".h5":
             matches += self.search_hdf5_file(binary_file)
 
-        else:
-            if not self.verify_interactively(relative_path_name_ext):
-                matches.append(
-                    ssm.Match(0, 0, 0, "", "", None, "Unknown binary file")
-                )
+        elif not self.verify_interactively(relative_path_name_ext):
+            matches.append(
+                ssm.Match(0, 0, 0, "", "", None, "Unknown binary file")
+            )
 
         return matches
 
     def _is_img_ext(self, ext: str) -> bool:
-        return ext.lower().lstrip(".") in pil_image_formats_rw
+        return ext.lower().lstrip(".") in PIL_IMAGE_FORMATS_RW
 
     def interactive_image_sign_off(
         self,
@@ -797,15 +804,15 @@ class SensitiveStringsSearcher:
         # rescale the image for easier viewing
         img = numpy_to_image(np_image)
         rescaled = ""
-        if img.size[0] > 1920:
-            scale = 1920 / img.size[0]
+        if img.size[0] > FULL_DEFINITION_SIZE[0]:
+            scale = FULL_DEFINITION_SIZE[0] / img.size[0]
             img = img.resize(
                 (int(scale * img.size[0]), int(scale * img.size[1]))
             )
             np_image = np.array(img)
             rescaled = " (downscaled)"
-        if img.size[1] > 1080:
-            scale = 1080 / img.size[1]
+        if img.size[1] > FULL_DEFINITION_SIZE[1]:
+            scale = FULL_DEFINITION_SIZE[1] / img.size[1]
             img = img.resize(
                 (int(scale * img.size[0]), int(scale * img.size[1]))
             )
@@ -903,12 +910,14 @@ class SensitiveStringsSearcher:
                 git = "git"
             git_committed = subprocess.run(  # noqa: S603
                 [git, "ls-tree", "--full-tree", "--name-only", "-r", "HEAD"],
+                check=True,
                 cwd=self.root_search_dir,
                 stdout=subprocess.PIPE,
                 text=True,
             )
             git_added = subprocess.run(  # noqa: S603
                 [git, "diff", "--name-only", "--cached", "--diff-filter=A"],
+                check=True,
                 cwd=self.root_search_dir,
                 stdout=subprocess.PIPE,
                 text=True,
@@ -956,24 +965,21 @@ class SensitiveStringsSearcher:
                 self._register_file_in_cleared_cache(
                     rel_file_path, file_name_ext
                 )
+            # need to check this file
+            elif self._is_binary_file(rel_file_path, file_name_ext):
+                # deal with non-parseable binary files as a group, below
+                self._enqueue_unknown_binary_files_for_later_processing(
+                    rel_file_path, file_name_ext
+                )
             else:
-                # need to check this file
-                if self._is_binary_file(rel_file_path, file_name_ext):
-                    # deal with non-parseable binary files as a group, below
-                    self._enqueue_unknown_binary_files_for_later_processing(
-                        rel_file_path, file_name_ext
-                    )
+                # check text files for sensitive strings
+                file_matches = self.search_file(rel_file_path, file_name_ext)
+                if len(file_matches) > 0:
+                    matches[file_path_name_ext] = file_matches
                 else:
-                    # check text files for sensitive strings
-                    file_matches = self.search_file(
+                    self._register_file_in_cleared_cache(
                         rel_file_path, file_name_ext
                     )
-                    if len(file_matches) > 0:
-                        matches[file_path_name_ext] = file_matches
-                    else:
-                        self._register_file_in_cleared_cache(
-                            rel_file_path, file_name_ext
-                        )
 
         # Potentially remove unfound binary files
         if (
@@ -992,9 +998,9 @@ class SensitiveStringsSearcher:
                 "Found files containing sensitive strings:",
                 extra={"number_of_files": len(matches)},
             )
-            for file in matches:
+            for file, file_matches in matches.items():
                 logger.error("    File %s:", file)
-                for match in matches[file]:
+                for match in file_matches:
                     logger.error("        %s", match.msg)
         if len(self.unfound_allowed_binary_files) > 0:
             logger.error(

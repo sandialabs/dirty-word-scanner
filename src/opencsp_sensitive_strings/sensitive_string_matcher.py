@@ -30,17 +30,17 @@ class SensitiveStringMatcher:
         next_is_regex = False
         all_regex = False
         remaining_negative_match = False
+        log_levels = {
+            "debug": logging.debug,
+            "info": logging.info,
+            "warning": logging.warning,
+            "error": logging.error,
+        }
         for pattern in patterns:
             if pattern.startswith("**"):
                 directive = pattern[2:]
-                if directive == "debug":
-                    self.log = logging.debug
-                elif directive == "info":
-                    self.log = logging.info
-                elif directive == "warning":
-                    self.log = logging.warning
-                elif directive == "error":
-                    self.log = logging.error
+                if directive in log_levels:
+                    self.log = log_levels[directive]
                 elif directive == "next_is_regex":
                     next_is_regex = True
                 elif directive == "all_regex":
@@ -65,13 +65,18 @@ class SensitiveStringMatcher:
 
         # case insensitive matching
         if not self.case_sensitive:
-            for pattern_list in [self.patterns, self.neg_patterns]:
-                for i, pattern in enumerate(pattern_list):
-                    if isinstance(pattern, str):
-                        pattern_list[i] = pattern.lower()
-                    else:
-                        p: re.Pattern = pattern
-                        pattern_list[i] = re.compile(p.pattern.lower())
+            self.patterns = [
+                _.lower()
+                if isinstance(_, str)
+                else re.compile(_.pattern.lower())
+                for _ in self.patterns
+            ]
+            self.neg_patterns = [
+                _.lower()
+                if isinstance(_, str)
+                else re.compile(_.pattern.lower())
+                for _ in self.neg_patterns
+            ]
 
     def _search_pattern(
         self, ihaystack: str, pattern: Union[re.Pattern, str]

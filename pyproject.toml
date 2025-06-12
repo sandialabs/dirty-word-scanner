@@ -42,7 +42,7 @@ extend-select = [
     "B",
     "BLE",
     "C4",
-    # "C90",
+    "C90",
     # "D",
     "DJ",
     "DTZ",
@@ -87,14 +87,13 @@ extend-select = [
     "TC",
     "TD",
     "TID",
+    "TRY",
     "UP",
     "W",
     "YTT",
 ]
 ignore = [
 #     "D212",
-    "PLR0912",  # Remove this after reducing complexity.
-    "PLR0915",  # Remove this after reducing complexity.
 ]
 
 [tool.ruff.lint.per-file-ignores]

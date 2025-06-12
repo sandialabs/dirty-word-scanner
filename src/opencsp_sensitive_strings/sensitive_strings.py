@@ -118,12 +118,8 @@ def numpy_to_image(
                 rescale_max = np.max(arr)
             scale = 255 / rescale_max
             arr = arr * scale
-            arr = np.clip(arr, 0, 255)
-            arr = arr.astype(np.uint8)
-        else:
-            arr = np.clip(arr, 0, 255)
-            arr = arr.astype(np.uint8)
-
+        arr = np.clip(arr, 0, 255)
+        arr = arr.astype(np.uint8)
     return Image.fromarray(arr)
 
 
@@ -224,7 +220,7 @@ def load_hdf5_datasets(
                 data = data.decode()
 
             # Save in dictionary
-            kwargs.update({name: data})
+            kwargs[name] = data
 
     return kwargs
 
@@ -462,17 +458,14 @@ class SensitiveStringsSearcher:
         if ext == ".ipynb":
             is_binary_file = True
         elif self._is_img_ext(ext):
-            if (
-                ext in self._text_file_extensions
-                or (
+            is_binary_file = (
+                (ext not in self._text_file_extensions)
+                and (
                     f"{rel_file_path}/{file_name_ext}"
-                    in self._text_file_path_name_exts
+                    not in self._text_file_path_name_exts
                 )
-                or (file_name_ext in self._text_file_path_name_exts)
-            ):
-                is_binary_file = False
-            else:
-                is_binary_file = True
+                and (file_name_ext not in self._text_file_path_name_exts)
+            )
         elif (
             os.path.getsize(self.norm_path(rel_file_path, file_name_ext))
             > MAX_FILE_SIZE
@@ -545,7 +538,7 @@ class SensitiveStringsSearcher:
         lines = self.parse_file(file_path, file_name_ext)
 
         matches: list[ssm.Match] = []
-        matches += self.search_lines([file_path + "/" + file_name_ext])
+        matches += self.search_lines([f"{file_path}/{file_name_ext}"])
         matches += self.search_lines(lines)
 
         return matches
@@ -582,7 +575,7 @@ class SensitiveStringsSearcher:
         )
         with open(self.allowed_binary_files_csv) as fin:
             allowed_binary_files_lines = fin.readlines()
-        with open(fd, "w") as fout:
+        with os.fdopen(fd, "w") as fout:
             fout.writelines(allowed_binary_files_lines)
 
         # Create a searcher for the unzipped directory
@@ -646,7 +639,7 @@ class SensitiveStringsSearcher:
                             path = os.path.basename(file_relpath_name_ext)
                             name = os.path.splitext(file_relpath_name_ext)[0]
                             dataset_name = path.replace("\\", "/") + "/" + name
-                            match.msg = dataset_name + "::" + match.msg
+                            match.msg = f"{dataset_name}::{match.msg}"
                             matches.append(match)
             else:  # if len(hdf5_matches) > 0:
                 message = (
@@ -658,7 +651,6 @@ class SensitiveStringsSearcher:
                 logger.error(message)
                 raise RuntimeError(message)
 
-        # There were no errors, matches should be empty
         elif len(hdf5_matches) > 0:
             message = (
                 "Programmer error in SensitiveStringsSearcher."
@@ -714,9 +706,9 @@ class SensitiveStringsSearcher:
                 )  # small delay to prevent accidental double-bounces
 
                 # Check for 'y' or 'n'
-                if key == ord("y") or key == ord("Y"):
+                if key in [ord("y"), ord("Y")]:
                     val = "y"
-                elif key == ord("n") or key == ord("N"):
+                elif key in [ord("n"), ord("N")]:
                     val = "n"
                 else:
                     val = "?"
@@ -993,7 +985,7 @@ class SensitiveStringsSearcher:
 
         # Print initial information about matching files and problematic
         # binary files.
-        if len(matches) > 0:
+        if matches:
             logger.error(
                 "Found files containing sensitive strings:",
                 extra={"number_of_files": len(matches)},
@@ -1034,27 +1026,7 @@ class SensitiveStringsSearcher:
                 )
                 num_signed_binary_files = 0
 
-                # Search for sensitive string matches, and interactively
-                # ask the user about unparseable binary files.
-                parsable_matches: list[ssm.Match] = self.search_binary_file(
-                    file_ff
-                )
-
-                if len(parsable_matches) == 0:
-                    # No matches: this file is ok.
-                    # Add the validated and/or signed off file to the
-                    # allowed binary files CSV.
-                    self.unknown_binary_files.remove(file_ff)
-                    self.allowed_binary_files.append(file_ff)
-
-                    # Overwrite the allowed list CSV file with the
-                    # updated allowed_binary_files and make a backup as
-                    # necessary.
-                    self.update_allowed_binaries_csv()
-
-                    num_signed_binary_files += 1
-
-                else:  # if len(parsable_matches) == 0:
+                if parsable_matches := self.search_binary_file(file_ff):
                     # This file is not ok. Tell the user why.
                     logger.error(
                         "    Found possible sensitive issues in file.",
@@ -1073,6 +1045,20 @@ class SensitiveStringsSearcher:
                             match.lineno,
                             match.colno,
                         )
+
+                else:
+                    # No matches: this file is ok.
+                    # Add the validated and/or signed off file to the
+                    # allowed binary files CSV.
+                    self.unknown_binary_files.remove(file_ff)
+                    self.allowed_binary_files.append(file_ff)
+
+                    # Overwrite the allowed list CSV file with the
+                    # updated allowed_binary_files and make a backup as
+                    # necessary.
+                    self.update_allowed_binaries_csv()
+
+                    num_signed_binary_files += 1
 
                 # Date+time stamp the new allowed list csv files
                 if num_signed_binary_files > 0:
@@ -1120,7 +1106,7 @@ class SensitiveStringsSearcher:
         ):
             path = os.path.dirname(self.cache_file_csv)
             name = os.path.splitext(os.path.basename(self.cache_file_csv))[0]
-            os.makedirs(path)
+            os.makedirs(path, exist_ok=True)
             self.new_cached_cleared_files[0].to_csv(
                 "Cleared Files Cache",
                 path,
@@ -1129,15 +1115,12 @@ class SensitiveStringsSearcher:
                 overwrite=True,
             )
 
-        # Executive summary
-        info_or_warn = logger.info
         ret = (
             len(matches)
             + len(self.unfound_allowed_binary_files)
             + len(self.unknown_binary_files)
         )
-        if ret > 0:
-            info_or_warn = logger.warning
+        info_or_warn = logger.warning if ret > 0 else logger.info
         info_or_warn("Summary:")
         info_or_warn("<<<PASS>>>" if ret == 0 else "<<<FAIL>>>")
         info_or_warn(f"Found {len(matches)} sensitive string matches")

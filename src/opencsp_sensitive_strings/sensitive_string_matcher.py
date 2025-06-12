@@ -83,12 +83,9 @@ class SensitiveStringMatcher:
                 end = start + len(pattern)
                 return [start, end]
 
-        else:
-            # Check for instances of regex matches
-            re_match = pattern.search(ihaystack)
-            if re_match:
-                start, end = re_match.span()[0], re_match.span()[1]
-                return [start, end]
+        elif re_match := pattern.search(ihaystack):
+            start, end = re_match.span()[0], re_match.span()[1]
+            return [start, end]
 
         return None
 
@@ -98,8 +95,7 @@ class SensitiveStringMatcher:
         ret: dict[Union[re.Pattern, str], list[int]] = {}
 
         for pattern in patterns:
-            span = self._search_pattern(ihaystack, pattern)
-            if span:
+            if span := self._search_pattern(ihaystack, pattern):
                 ret[pattern] = span
 
         return ret

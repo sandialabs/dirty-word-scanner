@@ -36,7 +36,7 @@ class test_FileCache(unittest.TestCase):
         self._write_text_file(outfile)
         fc2 = fc.FileCache.for_file("", self.out_dir, outfile + ".txt")
 
-        self.assertNotEqual(fc1, fc2)
+        assert fc1 != fc2
 
     def test_file_unchanged(self) -> None:
         outfile = "static_file.txt"
@@ -46,7 +46,7 @@ class test_FileCache(unittest.TestCase):
         self._delay_1_second()
         fc2 = fc.FileCache.for_file("", self.out_dir, outfile + ".txt")
 
-        self.assertEqual(fc1, fc2)
+        assert fc1 == fc2
 
 
 if __name__ == "__main__":

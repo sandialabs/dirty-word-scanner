@@ -43,7 +43,7 @@ class test_FileFingerprint(unittest.TestCase):
             f"{self.out_dir}/{d2}", "", f2 + ".txt"
         )
 
-        self.assertEqual(ff1, ff2)
+        assert ff1 == ff2
 
     def test_not_equal_relpath(self) -> None:
         d1 = "not_equal_relpath1"
@@ -57,7 +57,7 @@ class test_FileFingerprint(unittest.TestCase):
         ff1 = ff.FileFingerprint.for_file(self.out_dir, d1, f1 + ".txt")
         ff2 = ff.FileFingerprint.for_file(self.out_dir, d2, f2 + ".txt")
 
-        self.assertNotEqual(ff1, ff2)
+        assert ff1 != ff2
 
     def test_not_equal_filename(self) -> None:
         d1 = "not_equal_filename1"
@@ -75,7 +75,7 @@ class test_FileFingerprint(unittest.TestCase):
             f"{self.out_dir}/{d2}", "", f2 + ".txt"
         )
 
-        self.assertNotEqual(ff1, ff2)
+        assert ff1 != ff2
 
     def test_not_equal_hash(self) -> None:
         d1 = "not_equal_hash1"
@@ -95,7 +95,7 @@ class test_FileFingerprint(unittest.TestCase):
             f"{self.out_dir}/{d2}", "", f2 + ".txt"
         )
 
-        self.assertNotEqual(ff1, ff2)
+        assert ff1 != ff2
 
 
 if __name__ == "__main__":

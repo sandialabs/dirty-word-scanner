@@ -99,7 +99,7 @@ class test_sensitive_strings(unittest.TestCase):
             self.root_search_dir, sensitive_strings_csv, self.all_binaries
         )
         searcher.git_files_only = False
-        self.assertEqual(searcher.search_files(), 0)
+        assert searcher.search_files() == 0
 
     def test_single_matcher(self) -> None:
         # based on file name
@@ -110,7 +110,7 @@ class test_sensitive_strings(unittest.TestCase):
             self.root_search_dir, sensitive_strings_csv, self.all_binaries
         )
         searcher.git_files_only = False
-        self.assertEqual(searcher.search_files(), 1)
+        assert searcher.search_files() == 1
 
         # based on file content
         sensitive_strings_csv = os.path.join(
@@ -120,7 +120,7 @@ class test_sensitive_strings(unittest.TestCase):
             self.root_search_dir, sensitive_strings_csv, self.all_binaries
         )
         searcher.git_files_only = False
-        self.assertEqual(searcher.search_files(), 1)
+        assert searcher.search_files() == 1
 
     def test_directory_matcher(self) -> None:
         sensitive_strings_csv = os.path.join(
@@ -130,7 +130,7 @@ class test_sensitive_strings(unittest.TestCase):
             self.root_search_dir, sensitive_strings_csv, self.all_binaries
         )
         searcher.git_files_only = False
-        self.assertEqual(searcher.search_files(), 1)
+        assert searcher.search_files() == 1
 
     def test_all_matches(self) -> None:
         sensitive_strings_csv = os.path.join(
@@ -144,7 +144,7 @@ class test_sensitive_strings(unittest.TestCase):
         # * files:  a.txt, b/b.txt, and c/d/e.txt
         # * images:  c/img1.png, and c/img2.jpg
         # * hdf5:  f.h5/f
-        self.assertEqual(searcher.search_files(), 6)
+        assert searcher.search_files() == 6
 
     def test_single_unknown_binary(self) -> None:
         sensitive_strings_csv = os.path.join(self.ss_dir, "no_matches.csv")
@@ -155,7 +155,7 @@ class test_sensitive_strings(unittest.TestCase):
             self.root_search_dir, sensitive_strings_csv, single_binary_csv
         )
         searcher.git_files_only = False
-        self.assertEqual(searcher.search_files(), 1)
+        assert searcher.search_files() == 1
 
     def test_single_expected_not_found_binary(self) -> None:
         sensitive_strings_csv = os.path.join(self.ss_dir, "no_matches.csv")
@@ -167,7 +167,7 @@ class test_sensitive_strings(unittest.TestCase):
         )
         searcher.git_files_only = False
         # 2 unknown binaries, and 1 expected not found
-        self.assertEqual(searcher.search_files(), 3)
+        assert searcher.search_files() == 3
 
     def test_hdf5_match(self) -> None:
         sensitive_strings_csv = os.path.join(self.ss_dir, "h5_match.csv")
@@ -176,7 +176,7 @@ class test_sensitive_strings(unittest.TestCase):
         )
         searcher.git_files_only = False
         # 2 unknown binaries, and 1 expected not found
-        self.assertEqual(searcher.search_files(), 1)
+        assert searcher.search_files() == 1
 
 
 if __name__ == "__main__":

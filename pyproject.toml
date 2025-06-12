@@ -52,10 +52,18 @@ extend-select = [
     "FIX",
     "G",
     "ICN",
+    "INP",
     "INT",
     "ISC",
     "LOG",
+    "PIE",
+    "PT",
+    "PYI",
     "S",
     "T10",
+    "T20",
     "YTT",
 ]
+
+[tool.ruff.lint.per-file-ignores]
+"**/test_*.py" = ["S101"]

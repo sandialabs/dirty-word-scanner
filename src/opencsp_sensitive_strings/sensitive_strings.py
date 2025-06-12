@@ -120,8 +120,7 @@ def numpy_to_image(
             arr = np.clip(arr, 0, 255)
             arr = arr.astype(np.uint8)
 
-    img = Image.fromarray(arr)
-    return img
+    return Image.fromarray(arr)
 
 
 def is_dataset_and_shape(
@@ -146,10 +145,8 @@ def is_dataset_and_shape(
         if isinstance(entity, h5py.Dataset):
             dset: h5py.Dataset = entity
             return True, dset.shape
-        else:
-            return True, ()
-    else:
-        return False, ()
+        return True, ()
+    return False, ()
 
 
 def get_groups_and_datasets(
@@ -516,9 +513,8 @@ class SensitiveStringsSearcher:
 
         if self._is_binary_file(rel_file_path, file_name_ext):
             return []
-        else:
-            with open(file_path_norm, newline="") as input_stream:
-                return input_stream.readlines()
+        with open(file_path_norm, newline="") as input_stream:
+            return input_stream.readlines()
 
     def search_lines(self, lines: list[str]) -> list[ssm.Match]:
         matches: list[ssm.Match] = []
@@ -734,10 +730,9 @@ class SensitiveStringsSearcher:
             if self.interactive:
                 if self.interactive_image_sign_off(file_ff=binary_file):
                     return []
-                else:
-                    matches.append(
-                        ssm.Match(0, 0, 0, "", "", None, "File denied by user")
-                    )
+                matches.append(
+                    ssm.Match(0, 0, 0, "", "", None, "File denied by user")
+                )
             else:
                 matches.append(
                     ssm.Match(0, 0, 0, "", "", None, "Unknown image file")
@@ -787,36 +782,32 @@ class SensitiveStringsSearcher:
                             f"{file_ff.relative_path}/{file_ff.name_ext}"
                         ),
                     )
-                else:
-                    return self.verify_interactively(file_ff.relative_path)
+                return self.verify_interactively(file_ff.relative_path)
                 # if img is not None
-            else:
-                return False
+            return False
 
-        else:
-            # rescale the image for easier viewing
-            img = numpy_to_image(np_image)
-            rescaled = ""
-            if img.size[0] > 1920:
-                scale = 1920 / img.size[0]
-                img = img.resize(
-                    (int(scale * img.size[0]), int(scale * img.size[1]))
-                )
-                np_image = np.array(img)
-                rescaled = " (downscaled)"
-            if img.size[0] > 1080:
-                scale = 1080 / img.size[1]
-                img = img.resize(
-                    (int(scale * img.size[0]), int(scale * img.size[1]))
-                )
-                np_image = np.array(img)
-                rescaled = " (downscaled)"
-
-            # Show the image and prompt the user
-            ret = self.verify_interactively(
-                description, np_image, description + rescaled
+        # rescale the image for easier viewing
+        img = numpy_to_image(np_image)
+        rescaled = ""
+        if img.size[0] > 1920:
+            scale = 1920 / img.size[0]
+            img = img.resize(
+                (int(scale * img.size[0]), int(scale * img.size[1]))
             )
-            return ret
+            np_image = np.array(img)
+            rescaled = " (downscaled)"
+        if img.size[0] > 1080:
+            scale = 1080 / img.size[1]
+            img = img.resize(
+                (int(scale * img.size[0]), int(scale * img.size[1]))
+            )
+            np_image = np.array(img)
+            rescaled = " (downscaled)"
+
+        # Show the image and prompt the user
+        return self.verify_interactively(
+            description, np_image, description + rescaled
+        )
 
     def _init_files_lists(self) -> None:
         self.matches.clear()

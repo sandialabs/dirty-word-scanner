@@ -29,7 +29,9 @@ class FileCache(aff.AbstractFileFingerprint):
         return cls(root, name_ext, last_modified), data[3:]
 
     @classmethod
-    def for_file(cls, root_path: str, relative_path: str, file_name_ext: str) -> "FileCache":
+    def for_file(
+        cls, root_path: str, relative_path: str, file_name_ext: str
+    ) -> "FileCache":
         norm_path = os.path.normpath(
             os.path.join(root_path, relative_path, file_name_ext)
         )
@@ -40,7 +42,9 @@ class FileCache(aff.AbstractFileFingerprint):
         return cls(relative_path, file_name_ext, last_modified)
 
     @classmethod
-    def from_csv(cls, file_path: str, file_name_ext: str) -> list[tuple["FileCache", list[str]]]:
+    def from_csv(
+        cls, file_path: str, file_name_ext: str
+    ) -> list[tuple["FileCache", list[str]]]:
         """Return N instances of this class from a csv file with a header and N lines.
 
         Basic implementation of from_csv. Subclasses are encouraged to extend this method.

@@ -53,7 +53,9 @@ pil_image_formats_rw = [
 """Image formats that can be handled by the Python Imaging Library (PIL)."""
 
 
-def numpy_to_image(arr: np.ndarray, rescale_or_clip: str = "rescale", rescale_max: int = -1) -> Image:
+def numpy_to_image(
+    arr: np.ndarray, rescale_or_clip: str = "rescale", rescale_max: int = -1
+) -> Image:
     """Convert the numpy representation of an image to a Pillow Image.
 
     Coverts the given arr to an Image. The array is converted to an integer
@@ -121,7 +123,7 @@ def numpy_to_image(arr: np.ndarray, rescale_or_clip: str = "rescale", rescale_ma
 
 
 def is_dataset_and_shape(
-    object: Union[h5py.Group, h5py.Dataset],
+    entity: Union[h5py.Group, h5py.Dataset],
 ) -> tuple[bool, tuple]:
     """Returns whether the given object is an hdf5 dataset and, if it is, then
     also what it's shape is.
@@ -138,9 +140,9 @@ def is_dataset_and_shape(
     shape: tuple[int]
         The shape of the dataset. Empty tuple() object if not a dataset.
     """
-    if not isinstance(object, h5py.Group):
-        if isinstance(object, h5py.Dataset):
-            dset: h5py.Dataset = object
+    if not isinstance(entity, h5py.Group):
+        if isinstance(entity, h5py.Dataset):
+            dset: h5py.Dataset = entity
             return True, dset.shape
         else:
             return True, tuple()
@@ -148,7 +150,9 @@ def is_dataset_and_shape(
         return False, tuple()
 
 
-def get_groups_and_datasets(hdf5_path_name_ext: Union[str, h5py.File]) -> tuple[list[str], list[tuple[str, tuple[int]]]]:
+def get_groups_and_datasets(
+    hdf5_path_name_ext: Union[str, h5py.File],
+) -> tuple[list[str], list[tuple[str, tuple[int]]]]:
     """Get the structure of an HDF5 file, including all group and dataset names, and the dataset shapes.
 
     Parameters
@@ -168,8 +172,8 @@ def get_groups_and_datasets(hdf5_path_name_ext: Union[str, h5py.File]) -> tuple[
     file_names_and_shapes: list[tuple[str, tuple[int]]] = []
     visited: list[tuple[str, bool, tuple]] = []
 
-    def visitor(name: str, object: Union[h5py.Group, h5py.Dataset]) -> None:
-        visited.append(tuple([name, *is_dataset_and_shape(object)]))
+    def visitor(name: str, entity: Union[h5py.Group, h5py.Dataset]) -> None:
+        visited.append(tuple([name, *is_dataset_and_shape(entity)]))
 
     if isinstance(hdf5_path_name_ext, str):
         hdf5_path_name_ext = os.path.normpath(hdf5_path_name_ext)
@@ -190,7 +194,9 @@ def get_groups_and_datasets(hdf5_path_name_ext: Union[str, h5py.File]) -> tuple[
     return group_names, file_names_and_shapes
 
 
-def load_hdf5_datasets(datasets: list[str], file: str) -> dict[str, Union[str, h5py.Dataset]]:
+def load_hdf5_datasets(
+    datasets: list[str], file: str
+) -> dict[str, Union[str, h5py.Dataset]]:
     """Loads datasets from HDF5 file"""
     with h5py.File(file, "r") as f:
         kwargs: dict[str, Union[str, h5py.Dataset]] = {}
@@ -423,7 +429,9 @@ class SensitiveStringsSearcher:
             os.path.join(self.root_search_dir, file_path, file_name_ext)
         )
 
-    def _is_file_in_cleared_cache(self, file_path: str, file_name_ext: str) -> bool:
+    def _is_file_in_cleared_cache(
+        self, file_path: str, file_name_ext: str
+    ) -> bool:
         cache_entry = fc.FileCache.for_file(
             self.root_search_dir, file_path, file_name_ext
         )
@@ -516,7 +524,9 @@ class SensitiveStringsSearcher:
 
         return matches
 
-    def search_file(self, file_path: str, file_name_ext: str) -> list[ssm.Match]:
+    def search_file(
+        self, file_path: str, file_name_ext: str
+    ) -> list[ssm.Match]:
         lines = self.parse_file(file_path, file_name_ext)
 
         matches: list[ssm.Match] = []
@@ -534,7 +544,9 @@ class SensitiveStringsSearcher:
             else:
                 return ret
 
-    def search_hdf5_file(self, hdf5_file: ff.FileFingerprint) -> list[ssm.Match]:
+    def search_hdf5_file(
+        self, hdf5_file: ff.FileFingerprint
+    ) -> list[ssm.Match]:
         norm_path = self.norm_path(hdf5_file.relative_path, hdf5_file.name_ext)
         relative_path_name_ext = (
             f"{hdf5_file.relative_path}/{hdf5_file.name_ext}"
@@ -869,13 +881,13 @@ class SensitiveStringsSearcher:
             git = shutil.which("git")
             if "mobaxterm" in git:
                 git = "git"
-            git_committed = subprocess.run(
+            git_committed = subprocess.run(  # noqa: S603
                 [git, "ls-tree", "--full-tree", "--name-only", "-r", "HEAD"],
                 cwd=self.root_search_dir,
                 stdout=subprocess.PIPE,
                 text=True,
             )
-            git_added = subprocess.run(
+            git_added = subprocess.run(  # noqa: S603
                 [git, "diff", "--name-only", "--cached", "--diff-filter=A"],
                 cwd=self.root_search_dir,
                 stdout=subprocess.PIPE,

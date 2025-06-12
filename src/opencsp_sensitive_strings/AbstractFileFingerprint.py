@@ -1,6 +1,6 @@
-from abc import ABC
 import dataclasses
 import os
+from abc import ABC
 
 
 @dataclasses.dataclass()

@@ -1,5 +1,5 @@
-import random
 import os
+import random
 import unittest
 
 import src.opencsp_sensitive_strings.FileFingerprint as ff

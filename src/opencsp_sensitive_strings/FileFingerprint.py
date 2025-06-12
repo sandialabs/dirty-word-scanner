@@ -6,7 +6,6 @@ import os
 
 import src.opencsp_sensitive_strings.AbstractFileFingerprint as aff
 
-
 logger = logging.getLogger(__name__)
 
 

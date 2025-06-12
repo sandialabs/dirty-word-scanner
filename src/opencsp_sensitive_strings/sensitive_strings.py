@@ -3,7 +3,6 @@ from __future__ import annotations
 import argparse
 import copy
 import csv
-import h5py
 import logging
 import os
 import shutil
@@ -16,13 +15,13 @@ from datetime import datetime, timezone
 from typing import Union
 
 import cv2
+import h5py
 import numpy as np
 from PIL import Image, UnidentifiedImageError
 
 import src.opencsp_sensitive_strings.FileCache as fc
 import src.opencsp_sensitive_strings.FileFingerprint as ff
 import src.opencsp_sensitive_strings.SensitiveStringMatcher as ssm
-
 
 logger = logging.getLogger(__name__)
 pil_image_formats_rw = [

@@ -1,7 +1,8 @@
-import numpy as np
 import os
 import unittest
 from unittest.mock import patch
+
+import numpy as np
 
 import src.opencsp_sensitive_strings.sensitive_strings as ss
 

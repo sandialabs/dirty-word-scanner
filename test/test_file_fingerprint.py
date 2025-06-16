@@ -1,16 +1,16 @@
-import os
 import random
 import unittest
+from pathlib import Path
 
 import opencsp_sensitive_strings.file_fingerprint as ff
 
 
 class TestFileFingerprint(unittest.TestCase):
     def setUp(self) -> None:
-        path = os.path.dirname(__file__)
-        self.data_dir = os.path.join(path, "data", "input", "FileFingerprint")
-        self.out_dir = os.path.join(path, "data", "output", "FileFingerprint")
-        os.makedirs(self.out_dir, exist_ok=True)
+        path = Path(__file__).parent
+        self.data_dir = path / "data" / "input" / "FileFingerprint"
+        self.out_dir = path / "data" / "output" / "FileFingerprint"
+        self.out_dir.mkdir(exist_ok=True)
 
     def _write_text_file(
         self,
@@ -18,13 +18,12 @@ class TestFileFingerprint(unittest.TestCase):
         output_file_basename: str,
         output_string: str,
     ) -> None:
-        output_directory = os.path.join(self.out_dir, output_subdirectory)
-        os.makedirs(output_directory, exist_ok=True)
-        output_dir_body_ext = os.path.join(
-            output_directory,
-            output_file_basename + ".txt",
+        output_directory = self.out_dir / output_subdirectory
+        output_directory.mkdir(exist_ok=True)
+        output_dir_body_ext = output_directory / (
+            output_file_basename + ".txt"
         )
-        with open(output_dir_body_ext, "w") as output_stream:
+        with output_dir_body_ext.open("w") as output_stream:
             output_stream.write(output_string + "\n")
 
     def test_equal(self) -> None:
@@ -36,12 +35,8 @@ class TestFileFingerprint(unittest.TestCase):
 
         self._write_text_file(d1, f1, contents)
         self._write_text_file(d2, f2, contents)
-        ff1 = ff.FileFingerprint.for_file(
-            f"{self.out_dir}/{d1}", "", f1 + ".txt"
-        )
-        ff2 = ff.FileFingerprint.for_file(
-            f"{self.out_dir}/{d2}", "", f2 + ".txt"
-        )
+        ff1 = ff.FileFingerprint.for_file(self.out_dir / d1, "", f1 + ".txt")
+        ff2 = ff.FileFingerprint.for_file(self.out_dir / d2, "", f2 + ".txt")
 
         assert ff1 == ff2
 
@@ -68,12 +63,8 @@ class TestFileFingerprint(unittest.TestCase):
 
         self._write_text_file(d1, f1, contents)
         self._write_text_file(d2, f2, contents)
-        ff1 = ff.FileFingerprint.for_file(
-            f"{self.out_dir}/{d1}", "", f1 + ".txt"
-        )
-        ff2 = ff.FileFingerprint.for_file(
-            f"{self.out_dir}/{d2}", "", f2 + ".txt"
-        )
+        ff1 = ff.FileFingerprint.for_file(self.out_dir / d1, "", f1 + ".txt")
+        ff2 = ff.FileFingerprint.for_file(self.out_dir / d2, "", f2 + ".txt")
 
         assert ff1 != ff2
 
@@ -88,12 +79,8 @@ class TestFileFingerprint(unittest.TestCase):
 
         self._write_text_file(d1, f1, contents1)
         self._write_text_file(d2, f2, contents2)
-        ff1 = ff.FileFingerprint.for_file(
-            f"{self.out_dir}/{d1}", "", f1 + ".txt"
-        )
-        ff2 = ff.FileFingerprint.for_file(
-            f"{self.out_dir}/{d2}", "", f2 + ".txt"
-        )
+        ff1 = ff.FileFingerprint.for_file(self.out_dir / d1, "", f1 + ".txt")
+        ff2 = ff.FileFingerprint.for_file(self.out_dir / d2, "", f2 + ".txt")
 
         assert ff1 != ff2
 

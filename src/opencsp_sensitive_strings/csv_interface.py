@@ -1,18 +1,18 @@
 import dataclasses
-import os
 from abc import ABC
+from pathlib import Path
 
 
 @dataclasses.dataclass()
 class CsvInterface(ABC):
-    relative_path: str
+    relative_path: Path
     """Path to the file, from the root search directory."""
-    name_ext: str
+    name_ext: Path
     """'name.ext' of the file."""
 
     @property
-    def relpath_name_ext(self) -> str:
-        return os.path.join(self.relative_path, self.name_ext)
+    def relpath_name_ext(self) -> Path:
+        return self.relative_path / self.name_ext
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, CsvInterface):
@@ -37,7 +37,7 @@ class CsvInterface(ABC):
 
     def to_csv(
         self,
-        file_path: str,
+        file_path: Path,
         file_name: str,
         rows: list["CsvInterface"],
     ) -> None:
@@ -46,12 +46,9 @@ class CsvInterface(ABC):
         """
         row_strs = [_.to_csv_line() for _ in rows]
         output_body_ext = file_name + ".csv"
-        output_dir_body_ext = os.path.normpath(
-            os.path.join(file_path, output_body_ext)
-        )
-        os.makedirs(file_path, exist_ok=True)
-        output_stream = open(output_dir_body_ext, "w")
-        output_stream.write(self.csv_header() + "\n")
-        for data_line in row_strs:
-            output_stream.write(data_line + "\n")
-        output_stream.close()
+        output_dir_body_ext = file_path / output_body_ext
+        file_path.mkdir(exist_ok=True)
+        with output_dir_body_ext.open("w") as output_stream:
+            output_stream.write(self.csv_header() + "\n")
+            for data_line in row_strs:
+                output_stream.write(data_line + "\n")

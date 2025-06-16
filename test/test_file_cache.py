@@ -1,24 +1,21 @@
-import os
 import time
 import unittest
 from datetime import datetime, timezone
+from pathlib import Path
 
 import opencsp_sensitive_strings.file_cache as fc
 
 
 class TestFileCache(unittest.TestCase):
     def setUp(self) -> None:
-        path = os.path.dirname(__file__)
-        self.data_dir = os.path.join(path, "data", "input", "FileCache")
-        self.out_dir = os.path.join(path, "data", "output", "FileCache")
-        os.makedirs(self.out_dir, exist_ok=True)
+        path = Path(__file__).parent
+        self.data_dir = path / "data" / "input" / "FileCache"
+        self.out_dir = path / "data" / "output" / "FileCache"
+        self.out_dir.mkdir(exist_ok=True)
 
     def _write_text_file(self, output_file_basename: str) -> None:
-        output_dir_body_ext = os.path.join(
-            self.out_dir,
-            output_file_basename + ".txt",
-        )
-        with open(output_dir_body_ext, "w") as _:
+        output_dir_body_ext = self.out_dir / (output_file_basename + ".txt")
+        with output_dir_body_ext.open("w") as _:
             pass
 
     def _delay_1_second(self) -> None:
@@ -35,10 +32,10 @@ class TestFileCache(unittest.TestCase):
         outfile = "changing_file.txt"
 
         self._write_text_file(outfile)
-        fc1 = fc.FileCache.for_file("", self.out_dir, outfile + ".txt")
+        fc1 = fc.FileCache.for_file(Path(), self.out_dir, outfile + ".txt")
         self._delay_1_second()
         self._write_text_file(outfile)
-        fc2 = fc.FileCache.for_file("", self.out_dir, outfile + ".txt")
+        fc2 = fc.FileCache.for_file(Path(), self.out_dir, outfile + ".txt")
 
         assert fc1 != fc2
 
@@ -46,9 +43,9 @@ class TestFileCache(unittest.TestCase):
         outfile = "static_file.txt"
 
         self._write_text_file(outfile)
-        fc1 = fc.FileCache.for_file("", self.out_dir, outfile + ".txt")
+        fc1 = fc.FileCache.for_file(Path(), self.out_dir, outfile + ".txt")
         self._delay_1_second()
-        fc2 = fc.FileCache.for_file("", self.out_dir, outfile + ".txt")
+        fc2 = fc.FileCache.for_file(Path(), self.out_dir, outfile + ".txt")
 
         assert fc1 == fc2
 

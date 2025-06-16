@@ -2,7 +2,7 @@ import csv
 import dataclasses
 import hashlib
 import logging
-import os
+from pathlib import Path
 
 from opencsp_sensitive_strings.csv_interface import CsvInterface
 
@@ -27,24 +27,21 @@ class FileFingerprint(CsvInterface):
         used.
         """
         root, name_ext, size, hash_hex = data[0], data[1], data[2], data[3]
-        size = int(size)
-        return cls(root, name_ext, size, hash_hex), data[4:]
+        return cls(Path(root), Path(name_ext), int(size), hash_hex), data[4:]
 
     @classmethod
     def for_file(
-        cls, root_path: str, relative_path: str, file_name_ext: str
+        cls, root_path: Path, relative_path: Path, file_name_ext: Path
     ) -> "FileFingerprint":
-        norm_path = os.path.normpath(
-            os.path.join(root_path, relative_path, file_name_ext)
-        )
-        file_size = os.path.getsize(norm_path)
-        with open(norm_path, "rb") as fin:
+        norm_path = root_path / relative_path / file_name_ext
+        file_size = norm_path.stat().st_size
+        with norm_path.open("rb") as fin:
             file_hash = hashlib.sha256(fin.read()).hexdigest()
         return cls(relative_path, file_name_ext, file_size, file_hash)
 
     @classmethod
     def from_csv(
-        cls, file_path: str, file_name_ext: str
+        cls, file_path: Path, file_name_ext: Path
     ) -> list[tuple["FileFingerprint", list[str]]]:
         """
         Return N instances of this class from a CSV file.
@@ -54,8 +51,8 @@ class FileFingerprint(CsvInterface):
         Note:
             Subclasses are encouraged to extend this method.
         """
-        input_path_file = os.path.join(file_path, file_name_ext)
-        with open(input_path_file) as csv_file:
+        input_path_file = file_path / file_name_ext
+        with input_path_file.open() as csv_file:
             data_rows = list(csv.reader(csv_file, delimiter=","))
         return [cls.from_csv_line(row) for row in data_rows[1:]]
 

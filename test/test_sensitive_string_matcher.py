@@ -1,15 +1,15 @@
-import os
 import unittest
+from pathlib import Path
 
 import opencsp_sensitive_strings.sensitive_string_matcher as ssm
 
 
 class TestSensitiveStringMatcher(unittest.TestCase):
     def setUp(self) -> None:
-        path = os.path.dirname(__file__)
-        self.data_dir = os.path.join(path, "data", "input", "FileCache")
-        self.out_dir = os.path.join(path, "data", "output", "FileCache")
-        os.makedirs(self.out_dir, exist_ok=True)
+        path = Path(__file__).parent
+        self.data_dir = path / "data" / "input" / "FileCache"
+        self.out_dir = path / "data" / "output" / "FileCache"
+        self.out_dir.mkdir(exist_ok=True)
 
     def test_match(self) -> None:
         matcher = ssm.SensitiveStringMatcher("Basic Matcher", "bar")

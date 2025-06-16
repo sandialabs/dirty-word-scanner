@@ -1,7 +1,7 @@
 import csv
 import dataclasses
-import os
 from datetime import datetime, timezone
+from pathlib import Path
 
 from opencsp_sensitive_strings.csv_interface import CsvInterface
 
@@ -20,26 +20,22 @@ class FileCache(CsvInterface):
         used.
         """
         root, name_ext, last_modified = data[0], data[1], data[2]
-        return cls(root, name_ext, last_modified), data[3:]
+        return cls(Path(root), Path(name_ext), last_modified), data[3:]
 
     @classmethod
     def for_file(
-        cls, root_path: str, relative_path: str, file_name_ext: str
+        cls, root_path: Path, relative_path: Path, file_name_ext: Path
     ) -> "FileCache":
-        norm_path = os.path.normpath(
-            os.path.join(root_path, relative_path, file_name_ext)
-        )
+        norm_path = root_path / relative_path / file_name_ext
         modified_time = datetime.fromtimestamp(
-            os.stat(norm_path).st_mtime,
+            norm_path.stat().st_mtime,
             tz=timezone.utc,
         )
         last_modified = modified_time.strftime("%Y-%m-%d %H:%M:%S")
         return cls(relative_path, file_name_ext, last_modified)
 
     @classmethod
-    def from_csv(
-        cls, file_path: str, file_name_ext: str
-    ) -> list[tuple["FileCache", list[str]]]:
+    def from_csv(cls, file_path: Path) -> list[tuple["FileCache", list[str]]]:
         """
         Return N instances of this class from a CSV file.
 
@@ -48,8 +44,7 @@ class FileCache(CsvInterface):
         Note:
             Subclasses are encouraged to extend this method.
         """
-        input_path_file = os.path.join(file_path, file_name_ext)
-        with open(input_path_file) as csv_file:
+        with file_path.open() as csv_file:
             data_rows = list(csv.reader(csv_file, delimiter=","))
         return [cls.from_csv_line(row) for row in data_rows[1:]]
 

@@ -917,11 +917,9 @@ class SensitiveStringsSearcher:
         self.allowed_binary_files = sorted(self.allowed_binary_files)
 
         self.allowed_binary_files[0].to_csv(
-            "Allowed Binary Files",
             path,
             name,
-            rows=self.allowed_binary_files,
-            overwrite=True,
+            self.allowed_binary_files,
         )
 
     def get_tracked_files(self) -> list[str]:
@@ -1137,11 +1135,9 @@ class SensitiveStringsSearcher:
             name = os.path.splitext(os.path.basename(self.cache_file_csv))[0]
             os.makedirs(path, exist_ok=True)
             self.new_cached_cleared_files[0].to_csv(
-                "Cleared Files Cache",
                 path,
                 name,
-                rows=self.new_cached_cleared_files,
-                overwrite=True,
+                self.new_cached_cleared_files,
             )
 
     def number_of_findings(self, matches: dict[str, list[ssm.Match]]) -> int:

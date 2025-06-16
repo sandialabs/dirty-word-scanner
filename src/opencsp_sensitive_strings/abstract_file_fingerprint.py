@@ -21,3 +21,27 @@ class AbstractFileFingerprint(ABC):
             self.relative_path == other.relative_path
             and self.name_ext == other.name_ext
         )
+
+    def csv_header(self) -> str:
+        return ",".join(dataclasses.asdict(self).keys())
+
+    def to_csv(
+        self,
+        file_path: str,
+        file_name: str,
+        rows: list["AbstractFileFingerprint"],
+    ) -> None:
+        """
+        Create a CSV file with a header and one or more lines.
+        """
+        row_strs = [_.to_csv_line() for _ in rows]
+        output_body_ext = file_name + ".csv"
+        output_dir_body_ext = os.path.normpath(
+            os.path.join(file_path, output_body_ext)
+        )
+        os.makedirs(file_path, exist_ok=True)
+        output_stream = open(output_dir_body_ext, "w")
+        output_stream.write(self.csv_header() + "\n")
+        for data_line in row_strs:
+            output_stream.write(data_line + "\n")
+        output_stream.close()

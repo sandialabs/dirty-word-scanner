@@ -16,12 +16,6 @@ class FileFingerprint(aff.AbstractFileFingerprint):
     hash_hex: str
     """ The latest hashlib.sha256([file_contents]).hexdigest() of the file. """
 
-    @staticmethod
-    def csv_header(delimiter: str = ",") -> str:
-        """Returns the string that represents the CSV header."""
-        keys = list(dataclasses.asdict(FileFingerprint("", "", "", "")).keys())
-        return delimiter.join(keys)
-
     def to_csv_line(self, delimiter: str = ",") -> str:
         """
         Return a string representation of this instance.

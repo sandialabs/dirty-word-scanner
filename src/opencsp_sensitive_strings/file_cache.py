@@ -11,12 +11,6 @@ class FileCache(aff.AbstractFileFingerprint):
     last_modified: str
     """ The system time that the file was last modified at. """
 
-    @staticmethod
-    def csv_header(delimiter: str = ",") -> str:
-        """Returns the string that represents the CSV header."""
-        keys = list(dataclasses.asdict(FileCache("", "", "")).keys())
-        return delimiter.join(keys)
-
     def to_csv_line(self, delimiter: str = ",") -> str:
         """
         Return a string representation of this instance

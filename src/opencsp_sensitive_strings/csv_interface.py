@@ -4,7 +4,7 @@ from abc import ABC
 
 
 @dataclasses.dataclass()
-class AbstractFileFingerprint(ABC):
+class CsvInterface(ABC):
     relative_path: str
     """Path to the file, from the root search directory."""
     name_ext: str
@@ -14,9 +14,9 @@ class AbstractFileFingerprint(ABC):
     def relpath_name_ext(self) -> str:
         return os.path.join(self.relative_path, self.name_ext)
 
-    def eq_aff(self, other: "AbstractFileFingerprint") -> bool:
-        if not isinstance(other, AbstractFileFingerprint):
-            return False
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, CsvInterface):
+            return NotImplemented
         return (
             self.relative_path == other.relative_path
             and self.name_ext == other.name_ext
@@ -25,11 +25,21 @@ class AbstractFileFingerprint(ABC):
     def csv_header(self) -> str:
         return ",".join(dataclasses.asdict(self).keys())
 
+    def to_csv_line(self) -> str:
+        """
+        Return a string representation of this instance
+
+        To be written to a CSV file.  Does not include a trailing
+        newline.
+        """
+        values = list(dataclasses.asdict(self).values())
+        return ",".join([str(_) for _ in values])
+
     def to_csv(
         self,
         file_path: str,
         file_name: str,
-        rows: list["AbstractFileFingerprint"],
+        rows: list["CsvInterface"],
     ) -> None:
         """
         Create a CSV file with a header and one or more lines.

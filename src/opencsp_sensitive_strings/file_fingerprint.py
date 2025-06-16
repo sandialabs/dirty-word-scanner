@@ -4,27 +4,17 @@ import hashlib
 import logging
 import os
 
-import opencsp_sensitive_strings.abstract_file_fingerprint as aff
+from opencsp_sensitive_strings.csv_interface import CsvInterface
 
 logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass()
-class FileFingerprint(aff.AbstractFileFingerprint):
+class FileFingerprint(CsvInterface):
     size: int
     """ Size of the file, in bytes """
     hash_hex: str
     """ The latest hashlib.sha256([file_contents]).hexdigest() of the file. """
-
-    def to_csv_line(self, delimiter: str = ",") -> str:
-        """
-        Return a string representation of this instance.
-
-        To be written to a CSV file.  Does not include a trailing
-        newline.
-        """
-        values = list(dataclasses.asdict(self).values())
-        return delimiter.join([str(value) for value in values])
 
     @classmethod
     def from_csv_line(

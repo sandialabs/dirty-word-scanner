@@ -1111,7 +1111,7 @@ class SensitiveStringsSearcher:
             self.allowed_binary_files + self.unfound_allowed_binary_files
         ):
             for file_cf in self.new_cached_cleared_files:
-                if file_ff.eq_aff(file_cf):
+                if file_ff == file_cf:
                     message = (
                         "Programmer error in sensitive_strings."
                         "search_files(): No binary files should be in the "
@@ -1124,7 +1124,7 @@ class SensitiveStringsSearcher:
         # Save the cleared files cache
         for file_ff in self.unknown_binary_files:
             for file_cf in self.new_cached_cleared_files:
-                if file_ff.eq_aff(file_cf):
+                if file_ff == file_cf:
                     self.new_cached_cleared_files.remove(file_cf)
                     break
         if (

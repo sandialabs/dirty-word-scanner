@@ -3,23 +3,13 @@ import dataclasses
 import os
 from datetime import datetime, timezone
 
-import opencsp_sensitive_strings.abstract_file_fingerprint as aff
+from opencsp_sensitive_strings.csv_interface import CsvInterface
 
 
 @dataclasses.dataclass()
-class FileCache(aff.AbstractFileFingerprint):
+class FileCache(CsvInterface):
     last_modified: str
     """ The system time that the file was last modified at. """
-
-    def to_csv_line(self, delimiter: str = ",") -> str:
-        """
-        Return a string representation of this instance
-
-        To be written to a CSV file.  Does not include a trailing
-        newline.
-        """
-        values = list(dataclasses.asdict(self).values())
-        return delimiter.join([str(value) for value in values])
 
     @classmethod
     def from_csv_line(cls, data: list[str]) -> tuple["FileCache", list[str]]:

@@ -1,5 +1,6 @@
+import csv
 import dataclasses
-from abc import ABC
+from abc import ABC, abstractmethod
 from pathlib import Path
 
 
@@ -7,20 +8,11 @@ from pathlib import Path
 class CsvInterface(ABC):
     relative_path: Path
     """Path to the file, from the root search directory."""
-    name_ext: Path
-    """'name.ext' of the file."""
-
-    @property
-    def relpath_name_ext(self) -> Path:
-        return self.relative_path / self.name_ext
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, CsvInterface):
             return NotImplemented
-        return (
-            self.relative_path == other.relative_path
-            and self.name_ext == other.name_ext
-        )
+        return self.relative_path == other.relative_path
 
     def csv_header(self) -> str:
         return ",".join(dataclasses.asdict(self).keys())
@@ -38,17 +30,42 @@ class CsvInterface(ABC):
     def to_csv(
         self,
         file_path: Path,
-        file_name: str,
         rows: list["CsvInterface"],
     ) -> None:
         """
         Create a CSV file with a header and one or more lines.
         """
         row_strs = [_.to_csv_line() for _ in rows]
-        output_body_ext = file_name + ".csv"
-        output_dir_body_ext = file_path / output_body_ext
-        file_path.mkdir(exist_ok=True)
-        with output_dir_body_ext.open("w") as output_stream:
+        file_path.parent.mkdir(exist_ok=True, parents=True)
+        with file_path.with_suffix(".csv").open("w") as output_stream:
             output_stream.write(self.csv_header() + "\n")
             for data_line in row_strs:
                 output_stream.write(data_line + "\n")
+
+    @classmethod
+    @abstractmethod
+    def from_csv_line(
+        cls, data: list[str]
+    ) -> tuple["CsvInterface", list[str]]:
+        """
+        Construct an instance of a subclass from CSV line data.
+
+        Also return any leftover portion of the CSV line that wasn't
+        used.
+        """
+
+    @classmethod
+    def from_csv(
+        cls, file_path: Path
+    ) -> list[tuple["CsvInterface", list[str]]]:
+        """
+        Return N instances of this class from a CSV file.
+
+        One per line in the CSV file, excluding the header.
+
+        Note:
+            Subclasses are encouraged to extend this method.
+        """
+        with file_path.open() as csv_file:
+            data_rows = list(csv.reader(csv_file, delimiter=","))
+        return [cls.from_csv_line(row) for row in data_rows[1:]]

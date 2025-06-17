@@ -8,15 +8,14 @@ import opencsp_sensitive_strings.file_cache as fc
 
 class TestFileCache(unittest.TestCase):
     def setUp(self) -> None:
-        path = Path(__file__).parent
-        self.data_dir = path / "data" / "input" / "FileCache"
-        self.out_dir = path / "data" / "output" / "FileCache"
+        self.out_dir = Path(__file__).parent / "data" / "output" / "FileCache"
         self.out_dir.mkdir(exist_ok=True)
 
-    def _write_text_file(self, output_file_basename: str) -> None:
-        output_dir_body_ext = self.out_dir / (output_file_basename + ".txt")
-        with output_dir_body_ext.open("w") as _:
+    def _write_text_file(self, file_name: str) -> Path:
+        absolute_output_file = self.out_dir / file_name
+        with absolute_output_file.open("w") as _:
             pass
+        return absolute_output_file
 
     def _delay_1_second(self) -> None:
         """
@@ -29,24 +28,18 @@ class TestFileCache(unittest.TestCase):
             time.sleep(0.05)
 
     def test_file_changed(self) -> None:
-        outfile = "changing_file.txt"
-
-        self._write_text_file(outfile)
-        fc1 = fc.FileCache.for_file(Path(), self.out_dir, outfile + ".txt")
+        file_name = "changing_file.txt"
+        fc1 = fc.FileCache.for_file(Path(), self._write_text_file(file_name))
         self._delay_1_second()
-        self._write_text_file(outfile)
-        fc2 = fc.FileCache.for_file(Path(), self.out_dir, outfile + ".txt")
-
+        fc2 = fc.FileCache.for_file(Path(), self._write_text_file(file_name))
         assert fc1 != fc2
 
     def test_file_unchanged(self) -> None:
-        outfile = "static_file.txt"
-
-        self._write_text_file(outfile)
-        fc1 = fc.FileCache.for_file(Path(), self.out_dir, outfile + ".txt")
+        file_name = "static_file.txt"
+        output_file = self._write_text_file(file_name)
+        fc1 = fc.FileCache.for_file(Path(), output_file)
         self._delay_1_second()
-        fc2 = fc.FileCache.for_file(Path(), self.out_dir, outfile + ".txt")
-
+        fc2 = fc.FileCache.for_file(Path(), output_file)
         assert fc1 == fc2
 
 

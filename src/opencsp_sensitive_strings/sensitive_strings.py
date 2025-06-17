@@ -222,14 +222,9 @@ def load_hdf5_datasets(
     return kwargs
 
 
-def _create_dataset_path(
-    base_dir: Path, h5_dataset_path_name: Path, dataset_ext: str = ".txt"
-) -> Path:
-    dataset_location = h5_dataset_path_name.parent
-    dataset_name = h5_dataset_path_name.stem
-    dataset_path = base_dir / dataset_location
-    dataset_path.mkdir(exist_ok=True)
-    return dataset_path / (dataset_name + dataset_ext)
+def _create_dataset_path(dataset: Path, extension: str = ".txt") -> Path:
+    dataset.parent.mkdir(exist_ok=True, parents=True)
+    return dataset.with_suffix(extension)
 
 
 def extract_hdf5_to_directory(
@@ -284,10 +279,9 @@ def extract_strings(
     hdf5_dir: Path,
 ) -> list[tuple[Path, tuple[int, ...]]]:
     possible_images: list[tuple[Path, tuple[int, ...]]] = []
-    for i, (possible_string_name, _) in enumerate(possible_strings):
-        dataset_name = possible_string_name.name
-        h5_val = load_hdf5_datasets([possible_string_name], norm_path)[
-            dataset_name
+    for i, (possible_string, _) in enumerate(possible_strings):
+        h5_val = load_hdf5_datasets([possible_string], norm_path)[
+            possible_string.name
         ]
         if (
             isinstance(h5_val, np.ndarray)
@@ -296,10 +290,10 @@ def extract_strings(
         ):
             h5_val = h5_val.tolist()[0]
         if isinstance(h5_val, str):
-            dataset_path_name_ext = _create_dataset_path(
-                hdf5_dir, possible_strings[i][0], ".txt"
+            dataset_path = _create_dataset_path(
+                hdf5_dir / possible_strings[i][0], ".txt"
             )
-            with dataset_path_name_ext.open("w") as fout:
+            with dataset_path.open("w") as fout:
                 fout.write(h5_val)
         else:
             possible_images.append(possible_strings[i])
@@ -312,51 +306,42 @@ def extract_images(
     hdf5_dir: Path,
 ) -> list[tuple[Path, tuple[int, ...]]]:
     other_datasets: list[tuple[Path, tuple[int, ...]]] = []
-    for i, (possible_image_name, shape) in enumerate(possible_images):
-        dataset_name = possible_image_name.name
-        h5_val = load_hdf5_datasets([possible_image_name], norm_path)[
-            dataset_name
+    for i, (possible_image, shape) in enumerate(possible_images):
+        h5_val = load_hdf5_datasets([possible_image], norm_path)[
+            possible_image.name
         ]
-        if isinstance(h5_val, (h5py.Dataset, np.ndarray)):
-            np_image = np.array(h5_val).squeeze()
-            # we assume images have 2 or 3 dimensions
-            if len(shape) in {2, 3}:
-                # We assume shapes are at least 10x10 pixels and have an
-                # aspect ratio of at least 10:1.
-                aspect_ratio = max(shape[0], shape[1]) / min(
-                    shape[0], shape[1]
-                )
-                if (shape[0] >= MIN_PIXELS and shape[1] >= MIN_PIXELS) and (
-                    aspect_ratio < MAX_ASPECT_RATIO + 1e-3
-                ):
-                    dataset_path_name_ext = _create_dataset_path(
-                        hdf5_dir, possible_images[i][0], ".png"
-                    )
-                    # assumed grayscale or RGB
-                    if (
-                        len(shape) == 2  # noqa: PLR2004
-                        or shape[2] in [1, 3]
-                    ):
-                        img = numpy_to_image(np_image)
-                        img.save(dataset_path_name_ext)
-                    else:  # assumed multiple images
-                        for index in range(shape[2]):
-                            dataset_path_name_ext_i = (
-                                dataset_path_name_ext.parent
-                                / (
-                                    f"{dataset_path_name_ext.stem}_{index}"
-                                    + dataset_path_name_ext.suffix
-                                )
-                            )
-                            np_single_image = np_image[:, :, index].squeeze()
-                            img = numpy_to_image(np_single_image)
-                            img.save(dataset_path_name_ext_i)
-                else:
-                    other_datasets.append(possible_images[i])
-            else:
-                other_datasets.append(possible_images[i])
-        else:
+        if not isinstance(h5_val, (h5py.Dataset, np.ndarray)):
             other_datasets.append(possible_images[i])
+            continue
+        np_image = np.array(h5_val).squeeze()
+        # we assume images have 2 or 3 dimensions
+        if len(shape) not in {2, 3}:
+            other_datasets.append(possible_images[i])
+            continue
+        # We assume shapes are at least 10x10 pixels and have an
+        # aspect ratio of at least 10:1.
+        aspect_ratio = max(shape[0], shape[1]) / min(shape[0], shape[1])
+        if (shape[0] < MIN_PIXELS or shape[1] < MIN_PIXELS) or (
+            aspect_ratio >= MAX_ASPECT_RATIO + 1e-3
+        ):
+            other_datasets.append(possible_images[i])
+            continue
+        dataset_path = _create_dataset_path(
+            hdf5_dir / possible_images[i][0], ".png"
+        )
+        # assumed grayscale or RGB
+        if len(shape) == 2 or shape[2] in [1, 3]:  # noqa: PLR2004
+            img = numpy_to_image(np_image)
+            img.save(dataset_path)
+        else:  # assumed multiple images
+            for index in range(shape[2]):
+                dataset_path_i = (
+                    dataset_path.parent
+                    / f"{dataset_path.stem}_{index}{dataset_path.suffix}"
+                )
+                np_single_image = np_image[:, :, index].squeeze()
+                img = numpy_to_image(np_single_image)
+                img.save(dataset_path_i)
     return other_datasets
 
 
@@ -366,13 +351,12 @@ def extract_other_datasets(
     hdf5_dir: Path,
 ) -> None:
     for i, (other_dataset_name, _) in enumerate(other_datasets):
-        dataset_name = other_dataset_name.name
         h5_val = load_hdf5_datasets([other_dataset_name], norm_path)[
-            dataset_name
+            other_dataset_name.name
         ]
         np_val = np.array(h5_val)
         dataset_path_name = _create_dataset_path(
-            hdf5_dir, other_datasets[i][0], ""
+            hdf5_dir / other_datasets[i][0], ""
         )
         # save as a numpy file
         np.save(dataset_path_name, np_val, allow_pickle=False)
@@ -444,47 +428,31 @@ class SensitiveStringsSearcher:
                     )
         return matchers
 
-    def norm_path(self, file_path: Path, file_name_ext: Path) -> Path:
-        return self.root_search_dir / file_path / file_name_ext
+    def norm_path(self, file_path: Path) -> Path:
+        return self.root_search_dir / file_path
 
-    def _is_file_in_cleared_cache(
-        self, file_path: Path, file_name_ext: Path
-    ) -> bool:
-        cache_entry = fc.FileCache.for_file(
-            self.root_search_dir, file_path, file_name_ext
-        )
+    def _is_file_in_cleared_cache(self, file_path: Path) -> bool:
+        cache_entry = fc.FileCache.for_file(self.root_search_dir, file_path)
         return cache_entry in self.cached_cleared_files
 
-    def _register_file_in_cleared_cache(
-        self, file_path: Path, file_name_ext: Path
-    ) -> None:
-        cache_entry = fc.FileCache.for_file(
-            self.root_search_dir, file_path, file_name_ext
-        )
+    def _register_file_in_cleared_cache(self, file_path: Path) -> None:
+        cache_entry = fc.FileCache.for_file(self.root_search_dir, file_path)
         self.new_cached_cleared_files.append(cache_entry)
 
-    def _is_binary_file(
-        self, rel_file_path: Path, file_name_ext: Path
-    ) -> bool:
+    def _is_binary_file(self, rel_file_path: Path) -> bool:
         is_binary_file = False
 
         # check if a binary file
-        ext = file_name_ext.suffix.lower()
+        ext = rel_file_path.suffix.lower()
         if ext == ".ipynb":
             is_binary_file = True
-        elif self._is_img_ext(ext):
+        elif self._is_img_ext(rel_file_path):
             is_binary_file = (
                 (ext not in self._text_file_extensions)
-                and (
-                    f"{rel_file_path / file_name_ext}"
-                    not in self._text_file_path_name_exts
-                )
-                and (file_name_ext not in self._text_file_path_name_exts)
+                and (f"{rel_file_path}" not in self._text_file_path_name_exts)
+                and (rel_file_path.name not in self._text_file_path_name_exts)
             )
-        elif (
-            self.norm_path(rel_file_path, file_name_ext).stat().st_size
-            > MAX_FILE_SIZE
-        ):
+        elif self.norm_path(rel_file_path).stat().st_size > MAX_FILE_SIZE:
             # assume any file > 1MB is a binary file, in order to prevent
             # sensitive_strings from taking hours to check these files
             # needlessly
@@ -492,9 +460,7 @@ class SensitiveStringsSearcher:
         if not is_binary_file:
             # attempt to parse the file as a text file
             try:
-                file_path_norm: Path = self.norm_path(
-                    rel_file_path, file_name_ext
-                )
+                file_path_norm: Path = self.norm_path(rel_file_path)
                 with file_path_norm.open(newline="") as input_stream:
                     input_stream.readlines()
             except UnicodeDecodeError:
@@ -503,7 +469,7 @@ class SensitiveStringsSearcher:
         return is_binary_file
 
     def _enqueue_unknown_binary_files_for_later_processing(
-        self, rel_file_path: Path, file_name_ext: Path
+        self, rel_file_path: Path
     ) -> None:
         """
         Determine what to do with binary files.
@@ -518,7 +484,7 @@ class SensitiveStringsSearcher:
         later.
         """
         file_ff = ff.FileFingerprint.for_file(
-            self.root_search_dir, rel_file_path, file_name_ext
+            self.root_search_dir, rel_file_path
         )
 
         if file_ff in self.allowed_binary_files:
@@ -530,13 +496,11 @@ class SensitiveStringsSearcher:
             # we'll deal with unknown files as a group later
             self.unknown_binary_files.append(file_ff)
 
-    def parse_file(
-        self, rel_file_path: Path, file_name_ext: Path
-    ) -> list[str]:
-        file_path_norm: Path = self.norm_path(rel_file_path, file_name_ext)
+    def parse_file(self, rel_file_path: Path) -> list[str]:
+        file_path_norm: Path = self.norm_path(rel_file_path)
         logger.debug(file_path_norm)
 
-        if self._is_binary_file(rel_file_path, file_name_ext):
+        if self._is_binary_file(rel_file_path):
             return []
         with file_path_norm.open(newline="") as input_stream:
             return input_stream.readlines()
@@ -549,13 +513,11 @@ class SensitiveStringsSearcher:
 
         return matches
 
-    def search_file(
-        self, file_path: Path, file_name_ext: Path
-    ) -> list[ssm.Match]:
-        lines = self.parse_file(file_path, file_name_ext)
+    def search_file(self, file_path: Path) -> list[ssm.Match]:
+        lines = self.parse_file(file_path)
 
         matches: list[ssm.Match] = []
-        matches += self.search_lines([f"{file_path}/{file_name_ext}"])
+        matches += self.search_lines([f"{file_path}"])
         matches += self.search_lines(lines)
 
         return matches
@@ -573,75 +535,58 @@ class SensitiveStringsSearcher:
         self,
         matches: list[ssm.Match],
         hdf5_matches: dict[Path, list[ssm.Match]],
-        relative_path_name_ext: str,
+        relative_path: Path,
     ) -> None:
         # There was an error, but the user may want to sign off on
         # the file anyway.
-        if len(hdf5_matches) > 0:
-            # Describe the issues with the HDF5 file
-            logger.warning(
-                "Found possible issues with the HDF5 file:",
-                extra={
-                    "number_of_issues": len(hdf5_matches),
-                    "file": relative_path_name_ext,
-                },
-            )
-            prev_relpath_name_ext = None
-            for file_relpath_name_ext, file_matches in hdf5_matches.items():
-                if prev_relpath_name_ext != file_relpath_name_ext:
-                    logger.warning("    %s:", file_relpath_name_ext)
-                    prev_relpath_name_ext = file_relpath_name_ext
-                for match in file_matches:
-                    logger.warning(
-                        "        %s (line %d, col %d)",
-                        match.msg,
-                        match.lineno,
-                        match.colno,
-                    )
-
-            # Ask the user about signing off
-            if self.interactive:
-                if not self.verify_interactively(file_relpath_name_ext):
-                    matches.append(
-                        ssm.Match(
-                            0,
-                            0,
-                            0,
-                            "",
-                            "",
-                            None,
-                            "HDF5 file denied by user",
-                        )
-                    )
-            else:  # if self.interactive
-                for (
-                    file_relpath_name_ext,
-                    file_matches,
-                ) in hdf5_matches.items():
-                    for match in file_matches:
-                        dataset_name = (
-                            f"{file_relpath_name_ext.parent}/"
-                            + file_relpath_name_ext.stem
-                        )
-                        match.msg = f"{dataset_name}::{match.msg}"
-                        matches.append(match)
-        else:  # if len(hdf5_matches) > 0:
+        if len(hdf5_matches) == 0:
             message = (
-                "Programmer error in SensitiveStringsSearcher."
-                "search_hdf5_files(): Errors were returned for file "
-                f"{relative_path_name_ext} but there were 0 matches "
-                "found.",
+                f"Errors were returned for file {relative_path} but there "
+                "were 0 matches found."
             )
             logger.error(message)
             raise RuntimeError(message)
 
+        # Describe the issues with the HDF5 file
+        logger.warning(
+            "Found possible issues with the HDF5 file:",
+            extra={
+                "number_of_issues": len(hdf5_matches),
+                "file": relative_path,
+            },
+        )
+        previous_file = None
+        for file, file_matches in hdf5_matches.items():
+            if previous_file != file:
+                logger.warning("    %s:", file)
+                previous_file = file
+            for match in file_matches:
+                logger.warning(
+                    "        %s (line %d, col %d)",
+                    match.msg,
+                    match.lineno,
+                    match.colno,
+                )
+
+        # Ask the user about signing off
+        if self.interactive:
+            if not self.verify_interactively(file):
+                matches.append(
+                    ssm.Match(
+                        0, 0, 0, "", "", None, "HDF5 file denied by user"
+                    )
+                )
+        else:  # if self.interactive
+            for file, file_matches in hdf5_matches.items():
+                for match in file_matches:
+                    dataset_name = file.with_suffix("")
+                    match.msg = f"{dataset_name}::{match.msg}"
+                    matches.append(match)
+
     def search_hdf5_file(
         self, hdf5_file: ff.FileFingerprint
     ) -> list[ssm.Match]:
-        norm_path = self.norm_path(hdf5_file.relative_path, hdf5_file.name_ext)
-        relative_path_name_ext = (
-            f"{hdf5_file.relative_path}/{hdf5_file.name_ext}"
-        )
+        norm_path = self.norm_path(hdf5_file.relative_path)
         matches: list[ssm.Match] = []
 
         # Extract the contents from the HDF5 file
@@ -680,14 +625,12 @@ class SensitiveStringsSearcher:
         hdf5_matches = hdf5_searcher.matches
         if error != 0:
             self._handle_hdf5_error(
-                matches, hdf5_matches, relative_path_name_ext
+                matches, hdf5_matches, hdf5_file.relative_path
             )
         elif len(hdf5_matches) > 0:
             message = (
-                "Programmer error in SensitiveStringsSearcher."
-                "search_hdf5_files(): No errors were returned for file "
-                f"{relative_path_name_ext} but there were "
-                f"{len(hdf5_matches)} > 0 matches found.",
+                f"No errors were returned for file {hdf5_file.relative_path} "
+                f"but there were {len(hdf5_matches)} > 0 matches found."
             )
             logger.error(message)
             raise RuntimeError(message)
@@ -701,14 +644,14 @@ class SensitiveStringsSearcher:
 
     def verify_interactively(
         self,
-        relative_path_name_ext: Path,
+        file: Path,
         cv_img: Optional[Image.Image] = None,
         cv_title: Optional[str] = None,
     ) -> bool:
         if cv_img is None:
             logger.info("")
             logger.info("Unknown binary file:")
-            logger.info("    %s", relative_path_name_ext)
+            logger.info("    %s", file)
             logger.info(
                 "Is this unknown binary file safe to add, and doesn't contain "
                 "any sensitive information (y/n)?"
@@ -753,19 +696,16 @@ class SensitiveStringsSearcher:
 
         return val.lower() == "y"
 
+    def _is_img_ext(self, file: Path) -> bool:
+        return file.suffix.lower().lstrip(".") in PIL_IMAGE_FORMATS_RW
+
     def search_binary_file(
         self, binary_file: ff.FileFingerprint
     ) -> list[ssm.Match]:
-        norm_path = self.norm_path(
-            binary_file.relative_path, binary_file.name_ext
-        )
-        ext = norm_path.suffix
-        relative_path_name_ext = (
-            binary_file.relative_path / binary_file.name_ext
-        )
+        norm_path = self.norm_path(binary_file.relative_path)
         matches: list[ssm.Match] = []
 
-        if ext.lower().lstrip(".") in PIL_IMAGE_FORMATS_RW:
+        if self._is_img_ext(norm_path):
             if self.interactive:
                 if self.interactive_image_sign_off(
                     norm_path, file_ff=binary_file
@@ -779,18 +719,15 @@ class SensitiveStringsSearcher:
                     ssm.Match(0, 0, 0, "", "", None, "Unknown image file")
                 )
 
-        elif ext.lower() == ".h5":
+        elif norm_path.suffix.lower() == ".h5":
             matches += self.search_hdf5_file(binary_file)
 
-        elif not self.verify_interactively(relative_path_name_ext):
+        elif not self.verify_interactively(binary_file.relative_path):
             matches.append(
                 ssm.Match(0, 0, 0, "", "", None, "Unknown binary file")
             )
 
         return matches
-
-    def _is_img_ext(self, ext: str) -> bool:
-        return ext.lower().lstrip(".") in PIL_IMAGE_FORMATS_RW
 
     def interactive_image_sign_off(
         self,
@@ -799,10 +736,8 @@ class SensitiveStringsSearcher:
         file_ff: Optional[ff.FileFingerprint] = None,
     ) -> bool:
         if (np_image is None) and (file_ff is not None):
-            file_norm_path = self.norm_path(
-                file_ff.relative_path, file_ff.name_ext
-            )
-            if self._is_img_ext(file_norm_path.suffix):
+            file_norm_path = self.norm_path(file_ff.relative_path)
+            if self._is_img_ext(file_norm_path):
                 try:
                     img = Image.open(file_norm_path).convert("RGB")
                 except (
@@ -816,7 +751,7 @@ class SensitiveStringsSearcher:
                     np_image = np.copy(np.array(img))
                     img.close()
                     return self.interactive_image_sign_off(
-                        file_ff.relative_path / file_ff.name_ext,
+                        file_ff.relative_path,
                         np_image=np_image,
                     )
                 return self.verify_interactively(file_ff.relative_path)
@@ -860,8 +795,7 @@ class SensitiveStringsSearcher:
             self.allowed_binary_files = [
                 inst
                 for inst, _ in ff.FileFingerprint.from_csv(
-                    self.allowed_binary_files_csv.parent,
-                    Path(self.allowed_binary_files_csv.name),
+                    self.allowed_binary_files_csv
                 )
             ]
         self.accepted_binary_files.clear()
@@ -874,7 +808,6 @@ class SensitiveStringsSearcher:
         self.new_cached_cleared_files.clear()
         sensitive_strings_cache = fc.FileCache.for_file(
             self.sensitive_strings_csv.parent,
-            Path(),
             Path(self.sensitive_strings_csv.name),
         )
         if self.cache_file_csv is not None and self.cache_file_csv.is_file():
@@ -886,19 +819,16 @@ class SensitiveStringsSearcher:
         self.new_cached_cleared_files.append(sensitive_strings_cache)
 
     def create_backup_allowed_binaries_csv(self) -> None:
-        backup_name_ext = (
-            f"{self.allowed_binary_files_csv.stem}_backup_{self.date_time_str}"
-            f"{self.allowed_binary_files_csv.suffix}"
+        backup = (
+            self.allowed_binary_files_csv.parent
+            / (
+                f"{self.allowed_binary_files_csv.stem}_backup_"
+                f"{self.date_time_str}{self.allowed_binary_files_csv.suffix}"
+            )
         )
-        backup_path_name_ext = (
-            self.allowed_binary_files_csv.parent / backup_name_ext
-        )
-        if backup_path_name_ext.is_file():
-            backup_path_name_ext.unlink()
-        shutil.copyfile(
-            self.allowed_binary_files_csv,
-            self.allowed_binary_files_csv.parent / backup_name_ext,
-        )
+        if backup.is_file():
+            backup.unlink()
+        shutil.copyfile(self.allowed_binary_files_csv, backup)
         self.has_backed_up_allowed_binaries_csv = True
 
     def update_allowed_binaries_csv(self) -> None:
@@ -908,8 +838,7 @@ class SensitiveStringsSearcher:
             self.create_backup_allowed_binaries_csv()
         self.allowed_binary_files = sorted(self.allowed_binary_files)
         self.allowed_binary_files[0].to_csv(
-            self.allowed_binary_files_csv.parent,
-            self.allowed_binary_files_csv.stem,
+            self.allowed_binary_files_csv,
             self.allowed_binary_files,
         )
 
@@ -948,9 +877,8 @@ class SensitiveStringsSearcher:
         files: list[Path] = []
         for directory, _, files_in_directory in os.walk(self.root_search_dir):
             for file_name in files_in_directory:
-                full_path = Path(directory) / file_name
                 relative_path = os.path.relpath(
-                    full_path, self.root_search_dir
+                    Path(directory) / file_name, self.root_search_dir
                 )
                 files.append(Path(relative_path))
         logger.info(
@@ -962,31 +890,25 @@ class SensitiveStringsSearcher:
     def handle_files(self, files: list[Path]) -> dict[Path, list[ssm.Match]]:
         # Search for sensitive strings in files
         matches: dict[Path, list[ssm.Match]] = {}
-        for file_path_name_ext in files:
+        for file in files:
             if self.verbose:
-                logger.info("Searching file %s", file_path_name_ext)
-            rel_file_path = file_path_name_ext.parent
-            file_name_ext = Path(file_path_name_ext.name)
-            if self._is_file_in_cleared_cache(rel_file_path, file_name_ext):
+                logger.info("Searching file %s", file)
+            if self._is_file_in_cleared_cache(file):
                 # file cleared in a previous run, don't need to check again
-                self._register_file_in_cleared_cache(
-                    rel_file_path, file_name_ext
-                )
+                self._register_file_in_cleared_cache(file)
             # need to check this file
-            elif self._is_binary_file(rel_file_path, file_name_ext):
+            elif self._is_binary_file(file):
                 # deal with non-parseable binary files as a group, below
                 self._enqueue_unknown_binary_files_for_later_processing(
-                    rel_file_path, file_name_ext
+                    file
                 )
             else:
                 # check text files for sensitive strings
-                file_matches = self.search_file(rel_file_path, file_name_ext)
+                file_matches = self.search_file(file)
                 if len(file_matches) > 0:
-                    matches[file_path_name_ext] = file_matches
+                    matches[file] = file_matches
                 else:
-                    self._register_file_in_cleared_cache(
-                        rel_file_path, file_name_ext
-                    )
+                    self._register_file_in_cleared_cache(file)
 
         # Potentially remove unfound binary files
         if (
@@ -1022,7 +944,7 @@ class SensitiveStringsSearcher:
             )
             for file_ff in self.unfound_allowed_binary_files:
                 logger.info("")
-                logger.error(file_ff.relpath_name_ext)
+                logger.error(file_ff.relative_path)
         if len(self.unknown_binary_files) > 0:
             logger.warning(
                 "Found unexpected binary files:",
@@ -1036,11 +958,9 @@ class SensitiveStringsSearcher:
         unknowns_copy = copy.copy(self.unknown_binary_files)
         for file_ff in unknowns_copy:
             if self.verbose:
-                logger.info(
-                    "Searching binary file %s", file_ff.relpath_name_ext
-                )
+                logger.info("Searching binary file %s", file_ff.relative_path)
             logger.info("")
-            logger.info(file_ff.relpath_name_ext)
+            logger.info(file_ff.relative_path)
             num_signed_binary_files = 0
 
             if parsable_matches := self.search_binary_file(file_ff):
@@ -1049,13 +969,10 @@ class SensitiveStringsSearcher:
                     "    Found possible sensitive issues in file.",
                     extra={
                         "number_of_issues": len(parsable_matches),
-                        "file": self.norm_path(
-                            file_ff.relative_path, file_ff.name_ext
-                        ),
+                        "file": self.norm_path(file_ff.relative_path),
                     },
                 )
-                for _match in parsable_matches:
-                    match: ssm.Match = _match
+                for match in parsable_matches:
                     logger.error(
                         "    %s (line %d, col %d)",
                         match.msg,
@@ -1078,22 +995,17 @@ class SensitiveStringsSearcher:
 
             # Date+time stamp the new allowed list csv files
             if num_signed_binary_files > 0:
-                abfc_stamped_name_ext = (
-                    f"{self.allowed_binary_files_csv.stem}_"
-                    + self.date_time_str
-                    + self.allowed_binary_files_csv.suffix
-                )
-                abfc_stamped_path_name_ext = (
+                stamped = (
                     self.allowed_binary_files_csv.parent
-                    / abfc_stamped_name_ext
+                    / (
+                        f"{self.allowed_binary_files_csv.stem}_"
+                        + self.date_time_str
+                        + self.allowed_binary_files_csv.suffix
+                    )
                 )
-                if abfc_stamped_path_name_ext.is_file():
-                    abfc_stamped_path_name_ext.unlink()
-                shutil.copyfile(
-                    self.allowed_binary_files_csv,
-                    self.allowed_binary_files_csv.parent
-                    / abfc_stamped_name_ext,
-                )
+                if stamped.is_file():
+                    stamped.unlink()
+                shutil.copyfile(self.allowed_binary_files_csv, stamped)
         # for file_ff in unknowns_copy
 
     def check_cache(self) -> None:
@@ -1104,10 +1016,8 @@ class SensitiveStringsSearcher:
             for file_cf in self.new_cached_cleared_files:
                 if file_ff == file_cf:
                     message = (
-                        "Programmer error in sensitive_strings."
-                        "search_files(): No binary files should be in the "
-                        "cache, but at least 1 such file was found: "
-                        f'"{file_cf.relative_path}/{file_cf.name_ext}"',
+                        "No binary files should be in the cache, but at least "
+                        f'1 such file was found:  "{file_cf.relative_path}"'
                     )
                     logger.error(message)
                     raise RuntimeError(message)
@@ -1124,8 +1034,7 @@ class SensitiveStringsSearcher:
         ):
             self.cache_file_csv.parent.mkdir(parents=True, exist_ok=True)
             self.new_cached_cleared_files[0].to_csv(
-                self.cache_file_csv.parent,
-                self.cache_file_csv.stem,
+                self.cache_file_csv,
                 self.new_cached_cleared_files,
             )
 
@@ -1155,18 +1064,34 @@ class SensitiveStringsSearcher:
         # Add a 'match' for any unfound or unknown binary files
         if not self.is_hdf5_searcher:
             for file_ff in self.unfound_allowed_binary_files:
-                fpne = file_ff.relative_path / file_ff.name_ext
-                matches[fpne] = matches.get(fpne, [])
-                matches[fpne].append(
+                matches[file_ff.relative_path] = matches.get(
+                    file_ff.relative_path, []
+                )
+                matches[file_ff.relative_path].append(
                     ssm.Match(
-                        0, 0, 0, "", "", None, f"Unfound binary file {fpne}"
+                        0,
+                        0,
+                        0,
+                        "",
+                        "",
+                        None,
+                        f"Unfound binary file {file_ff.relative_path}",
                     )
                 )
         for file_ff in self.unknown_binary_files:
-            fpne = file_ff.relative_path / file_ff.name_ext
-            matches[fpne] = matches.get(fpne, [])
-            matches[fpne].append(
-                ssm.Match(0, 0, 0, "", "", None, f"Unknown binary file {fpne}")
+            matches[file_ff.relative_path] = matches.get(
+                file_ff.relative_path, []
+            )
+            matches[file_ff.relative_path].append(
+                ssm.Match(
+                    0,
+                    0,
+                    0,
+                    "",
+                    "",
+                    None,
+                    f"Unknown binary file {file_ff.relative_path}",
+                )
             )
         self.matches = matches
         return ret

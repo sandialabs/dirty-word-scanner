@@ -3,7 +3,7 @@ import unittest
 from datetime import datetime, timezone
 from pathlib import Path
 
-import opencsp_sensitive_strings.file_cache as fc
+from opencsp_sensitive_strings.file_cache import FileCache
 
 
 class TestFileCache(unittest.TestCase):
@@ -29,17 +29,17 @@ class TestFileCache(unittest.TestCase):
 
     def test_file_changed(self) -> None:
         file_name = "changing_file.txt"
-        fc1 = fc.FileCache.for_file(Path(), self._write_text_file(file_name))
+        fc1 = FileCache.for_file(Path(), self._write_text_file(file_name))
         self._delay_1_second()
-        fc2 = fc.FileCache.for_file(Path(), self._write_text_file(file_name))
+        fc2 = FileCache.for_file(Path(), self._write_text_file(file_name))
         assert fc1 != fc2
 
     def test_file_unchanged(self) -> None:
         file_name = "static_file.txt"
         output_file = self._write_text_file(file_name)
-        fc1 = fc.FileCache.for_file(Path(), output_file)
+        fc1 = FileCache.for_file(Path(), output_file)
         self._delay_1_second()
-        fc2 = fc.FileCache.for_file(Path(), output_file)
+        fc2 = FileCache.for_file(Path(), output_file)
         assert fc1 == fc2
 
 

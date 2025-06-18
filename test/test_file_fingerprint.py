@@ -2,7 +2,7 @@ import random
 import unittest
 from pathlib import Path
 
-import opencsp_sensitive_strings.file_fingerprint as ff
+from opencsp_sensitive_strings.file_fingerprint import FileFingerprint
 
 
 class TestFileFingerprint(unittest.TestCase):
@@ -33,8 +33,8 @@ class TestFileFingerprint(unittest.TestCase):
 
         self._write_text_file(d1, f1, contents)
         self._write_text_file(d2, f2, contents)
-        ff1 = ff.FileFingerprint.for_file(self.out_dir / d1, f1)
-        ff2 = ff.FileFingerprint.for_file(self.out_dir / d2, f2)
+        ff1 = FileFingerprint.for_file(self.out_dir / d1, f1)
+        ff2 = FileFingerprint.for_file(self.out_dir / d2, f2)
 
         assert ff1 == ff2
 
@@ -47,8 +47,8 @@ class TestFileFingerprint(unittest.TestCase):
 
         self._write_text_file(d1, f1, contents)
         self._write_text_file(d2, f2, contents)
-        ff1 = ff.FileFingerprint.for_file(self.out_dir, d1 / f1)
-        ff2 = ff.FileFingerprint.for_file(self.out_dir, d2 / f2)
+        ff1 = FileFingerprint.for_file(self.out_dir, d1 / f1)
+        ff2 = FileFingerprint.for_file(self.out_dir, d2 / f2)
 
         assert ff1 != ff2
 
@@ -61,8 +61,8 @@ class TestFileFingerprint(unittest.TestCase):
 
         self._write_text_file(d1, f1, contents)
         self._write_text_file(d2, f2, contents)
-        ff1 = ff.FileFingerprint.for_file(self.out_dir / d1, f1)
-        ff2 = ff.FileFingerprint.for_file(self.out_dir / d2, f2)
+        ff1 = FileFingerprint.for_file(self.out_dir / d1, f1)
+        ff2 = FileFingerprint.for_file(self.out_dir / d2, f2)
 
         assert ff1 != ff2
 
@@ -77,8 +77,8 @@ class TestFileFingerprint(unittest.TestCase):
 
         self._write_text_file(d1, f1, contents1)
         self._write_text_file(d2, f2, contents2)
-        ff1 = ff.FileFingerprint.for_file(self.out_dir / d1, f1)
-        ff2 = ff.FileFingerprint.for_file(self.out_dir / d2, f2)
+        ff1 = FileFingerprint.for_file(self.out_dir / d1, f1)
+        ff2 = FileFingerprint.for_file(self.out_dir / d2, f2)
 
         assert ff1 != ff2
 

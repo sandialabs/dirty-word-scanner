@@ -4,7 +4,10 @@ from unittest.mock import patch
 
 import numpy as np
 
-import src.opencsp_sensitive_strings.sensitive_strings as ss
+from src.opencsp_sensitive_strings.sensitive_strings import (
+    SensitiveStringsSearcher,
+    numpy_to_image,
+)
 
 
 class TestSensitiveStrings(unittest.TestCase):
@@ -21,7 +24,7 @@ class TestSensitiveStrings(unittest.TestCase):
         self.no_binaries = self.allowed_binaries_dir / "no_binaries.csv"
 
         self.patcher_update = patch.object(
-            ss.SensitiveStringsSearcher,
+            SensitiveStringsSearcher,
             "update_allowed_binaries_csv",
             lambda _: None,
         )
@@ -42,10 +45,10 @@ class TestSensitiveStrings(unittest.TestCase):
         arr8f = arr8i.astype(np.float16)
         arr16f = arr16i.astype(np.float16)
 
-        im8i = ss.numpy_to_image(arr8i, rescale_or_clip="truncate")
-        im16i = ss.numpy_to_image(arr16i, rescale_or_clip="truncate")
-        im8f = ss.numpy_to_image(arr8f, rescale_or_clip="truncate")
-        im16f = ss.numpy_to_image(arr16f, rescale_or_clip="truncate")
+        im8i = numpy_to_image(arr8i, rescale_or_clip="truncate")
+        im16i = numpy_to_image(arr16i, rescale_or_clip="truncate")
+        im8f = numpy_to_image(arr8f, rescale_or_clip="truncate")
+        im16f = numpy_to_image(arr16f, rescale_or_clip="truncate")
 
         np.testing.assert_array_equal(
             np.asarray(im8i), np.array([[0, 125, 255]])
@@ -66,10 +69,10 @@ class TestSensitiveStrings(unittest.TestCase):
         arr8f = arr8i.astype(np.float16)
         arr16f = arr16i.astype(np.float16)
 
-        im8i = ss.numpy_to_image(arr8i, rescale_or_clip="rescale")
-        im16i = ss.numpy_to_image(arr16i, rescale_or_clip="rescale")
-        im8f = ss.numpy_to_image(arr8f, rescale_or_clip="rescale")
-        im16f = ss.numpy_to_image(arr16f, rescale_or_clip="rescale")
+        im8i = numpy_to_image(arr8i, rescale_or_clip="rescale")
+        im16i = numpy_to_image(arr16i, rescale_or_clip="rescale")
+        im8f = numpy_to_image(arr8f, rescale_or_clip="rescale")
+        im16f = numpy_to_image(arr16f, rescale_or_clip="rescale")
 
         np.testing.assert_array_equal(
             np.asarray(im8i), np.array([[0, 125, 255]])
@@ -86,7 +89,7 @@ class TestSensitiveStrings(unittest.TestCase):
 
     def test_no_matches(self) -> None:
         sensitive_strings_csv = self.ss_dir / "no_matches.csv"
-        searcher = ss.SensitiveStringsSearcher(
+        searcher = SensitiveStringsSearcher(
             self.root_search_dir, sensitive_strings_csv, self.all_binaries
         )
         searcher.git_files_only = False
@@ -95,7 +98,7 @@ class TestSensitiveStrings(unittest.TestCase):
     def test_single_matcher(self) -> None:
         # based on file name
         sensitive_strings_csv = self.ss_dir / "test_single_matcher.csv"
-        searcher = ss.SensitiveStringsSearcher(
+        searcher = SensitiveStringsSearcher(
             self.root_search_dir, sensitive_strings_csv, self.all_binaries
         )
         searcher.git_files_only = False
@@ -103,7 +106,7 @@ class TestSensitiveStrings(unittest.TestCase):
 
         # based on file content
         sensitive_strings_csv = self.ss_dir / "test_single_matcher_content.csv"
-        searcher = ss.SensitiveStringsSearcher(
+        searcher = SensitiveStringsSearcher(
             self.root_search_dir, sensitive_strings_csv, self.all_binaries
         )
         searcher.git_files_only = False
@@ -111,7 +114,7 @@ class TestSensitiveStrings(unittest.TestCase):
 
     def test_directory_matcher(self) -> None:
         sensitive_strings_csv = self.ss_dir / "test_directory_matcher.csv"
-        searcher = ss.SensitiveStringsSearcher(
+        searcher = SensitiveStringsSearcher(
             self.root_search_dir, sensitive_strings_csv, self.all_binaries
         )
         searcher.git_files_only = False
@@ -119,7 +122,7 @@ class TestSensitiveStrings(unittest.TestCase):
 
     def test_all_matches(self) -> None:
         sensitive_strings_csv = self.ss_dir / "test_all_matches.csv"
-        searcher = ss.SensitiveStringsSearcher(
+        searcher = SensitiveStringsSearcher(
             self.root_search_dir, sensitive_strings_csv, self.no_binaries
         )
         searcher.git_files_only = False
@@ -132,7 +135,7 @@ class TestSensitiveStrings(unittest.TestCase):
     def test_single_unknown_binary(self) -> None:
         sensitive_strings_csv = self.ss_dir / "no_matches.csv"
         single_binary_csv = self.allowed_binaries_dir / "single_binary.csv"
-        searcher = ss.SensitiveStringsSearcher(
+        searcher = SensitiveStringsSearcher(
             self.root_search_dir, sensitive_strings_csv, single_binary_csv
         )
         searcher.git_files_only = False
@@ -143,7 +146,7 @@ class TestSensitiveStrings(unittest.TestCase):
         single_binary_csv = (
             self.allowed_binaries_dir / "single_expected_not_found_binary.csv"
         )
-        searcher = ss.SensitiveStringsSearcher(
+        searcher = SensitiveStringsSearcher(
             self.root_search_dir, sensitive_strings_csv, single_binary_csv
         )
         searcher.git_files_only = False
@@ -152,7 +155,7 @@ class TestSensitiveStrings(unittest.TestCase):
 
     def test_hdf5_match(self) -> None:
         sensitive_strings_csv = self.ss_dir / "h5_match.csv"
-        searcher = ss.SensitiveStringsSearcher(
+        searcher = SensitiveStringsSearcher(
             self.root_search_dir, sensitive_strings_csv, self.all_binaries
         )
         searcher.git_files_only = False

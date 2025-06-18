@@ -1,7 +1,9 @@
 import unittest
 from pathlib import Path
 
-import opencsp_sensitive_strings.sensitive_string_matcher as ssm
+from opencsp_sensitive_strings.sensitive_string_matcher import (
+    SensitiveStringMatcher,
+)
 
 
 class TestSensitiveStringMatcher(unittest.TestCase):
@@ -12,34 +14,32 @@ class TestSensitiveStringMatcher(unittest.TestCase):
         self.out_dir.mkdir(exist_ok=True)
 
     def test_match(self) -> None:
-        matcher = ssm.SensitiveStringMatcher("Basic Matcher", "bar")
+        matcher = SensitiveStringMatcher("Basic Matcher", "bar")
         matches = matcher.check_lines(["foo", "bar", "baz"])
         assert len(matches) == 1
         assert matches[0].lineno == 2
 
     def test_partial_match(self) -> None:
-        matcher = ssm.SensitiveStringMatcher("Basic Matcher", "bar")
+        matcher = SensitiveStringMatcher("Basic Matcher", "bar")
         matches = matcher.check_lines(["foobarbaz"])
         assert len(matches) == 1
         assert matches[0].lineno == 1
         assert matches[0].colno == 3
 
-        matcher = ssm.SensitiveStringMatcher("Basic Matcher", "foo")
+        matcher = SensitiveStringMatcher("Basic Matcher", "foo")
         matches = matcher.check_lines(["foobarbaz"])
         assert len(matches) == 1
         assert matches[0].lineno == 1
         assert matches[0].colno == 0
 
-        matcher = ssm.SensitiveStringMatcher("Basic Matcher", "baz")
+        matcher = SensitiveStringMatcher("Basic Matcher", "baz")
         matches = matcher.check_lines(["foobarbaz"])
         assert len(matches) == 1
         assert matches[0].lineno == 1
         assert matches[0].colno == 6
 
     def test_matches(self) -> None:
-        matcher = ssm.SensitiveStringMatcher(
-            "Basic Matcher", "foo", "bar", "baz"
-        )
+        matcher = SensitiveStringMatcher("Basic Matcher", "foo", "bar", "baz")
         matches = matcher.check_lines(["foo", "bar", "baz"])
         assert len(matches) == 3
         assert matches[0].lineno == 1
@@ -47,14 +47,14 @@ class TestSensitiveStringMatcher(unittest.TestCase):
         assert matches[2].lineno == 3
 
     def test_dont_match(self) -> None:
-        matcher = ssm.SensitiveStringMatcher(
+        matcher = SensitiveStringMatcher(
             "Basic Matcher", "foo", "**dont_match", "foo"
         )
         matches = matcher.check_lines(["foo", "bar", "baz"])
         assert len(matches) == 0
 
     def test_case_sensitive(self) -> None:
-        matcher = ssm.SensitiveStringMatcher(
+        matcher = SensitiveStringMatcher(
             "Basic Matcher", "**case_sensitive", "foo"
         )
         matches = matcher.check_lines(
@@ -64,7 +64,7 @@ class TestSensitiveStringMatcher(unittest.TestCase):
         assert matches[0].lineno == 8
 
     def test_single_regex(self) -> None:
-        matcher = ssm.SensitiveStringMatcher(
+        matcher = SensitiveStringMatcher(
             "Basic Matcher", "**next_is_regex", r"[a-z]a[a-z]"
         )
         matches = matcher.check_lines(["foo", "bar", "baz"])
@@ -75,7 +75,7 @@ class TestSensitiveStringMatcher(unittest.TestCase):
         assert matches[1].line_part == "baz"
 
     def test_partial_single_regex(self) -> None:
-        matcher = ssm.SensitiveStringMatcher(
+        matcher = SensitiveStringMatcher(
             "Regex Matcher", "**next_is_regex", r"[a-z]o[a-z]"
         )
         matches = matcher.check_lines(["foobarbaz"])
@@ -83,7 +83,7 @@ class TestSensitiveStringMatcher(unittest.TestCase):
         assert matches[0].colno == 0
         assert matches[0].line_part == "foo"
 
-        matcher = ssm.SensitiveStringMatcher(
+        matcher = SensitiveStringMatcher(
             "Regex Matcher", "**next_is_regex", r"[a-z]{2}r"
         )
         matches = matcher.check_lines(["foobarbaz"])
@@ -91,7 +91,7 @@ class TestSensitiveStringMatcher(unittest.TestCase):
         assert matches[0].colno == 3
         assert matches[0].line_part == "bar"
 
-        matcher = ssm.SensitiveStringMatcher(
+        matcher = SensitiveStringMatcher(
             "Regex Matcher", "**next_is_regex", r"[a-z]{2}z"
         )
         matches = matcher.check_lines(["foobarbaz"])
@@ -100,7 +100,7 @@ class TestSensitiveStringMatcher(unittest.TestCase):
         assert matches[0].line_part == "baz"
 
     def test_partial_multiple_regex(self) -> None:
-        matcher = ssm.SensitiveStringMatcher(
+        matcher = SensitiveStringMatcher(
             "Regex Matcher",
             "**all_regex",
             r"[a-z]o[a-z]",
@@ -117,7 +117,7 @@ class TestSensitiveStringMatcher(unittest.TestCase):
         assert matches[2].line_part == "baz"
 
     def test_mixed_plain_regex(self) -> None:
-        matcher = ssm.SensitiveStringMatcher(
+        matcher = SensitiveStringMatcher(
             "Basic Matcher", "foo", "**next_is_regex", r"[a-z]{2}r", "baz"
         )
 
@@ -142,7 +142,7 @@ class TestSensitiveStringMatcher(unittest.TestCase):
         assert matches[0].line_part == "baz"
 
     def test_regex_dont_match(self) -> None:
-        matcher = ssm.SensitiveStringMatcher(
+        matcher = SensitiveStringMatcher(
             "Basic Matcher",
             "foo",
             "**dont_match",
@@ -152,7 +152,7 @@ class TestSensitiveStringMatcher(unittest.TestCase):
         matches = matcher.check_lines(["foo", "bar", "baz"])
         assert len(matches) == 0
 
-        matcher = ssm.SensitiveStringMatcher(
+        matcher = SensitiveStringMatcher(
             "Basic Matcher",
             "**all_regex",
             "foo.?",

@@ -25,13 +25,11 @@ class TestSensitiveStringMatcher(unittest.TestCase):
         assert len(matches) == 1
         assert matches[0].lineno == 1
         assert matches[0].colno == 3
-
         matcher = SensitiveStringMatcher("Basic Matcher", "foo")
         matches = matcher.check_lines(["foobarbaz"])
         assert len(matches) == 1
         assert matches[0].lineno == 1
         assert matches[0].colno == 0
-
         matcher = SensitiveStringMatcher("Basic Matcher", "baz")
         matches = matcher.check_lines(["foobarbaz"])
         assert len(matches) == 1
@@ -82,7 +80,6 @@ class TestSensitiveStringMatcher(unittest.TestCase):
         assert len(matches) == 1
         assert matches[0].colno == 0
         assert matches[0].line_part == "foo"
-
         matcher = SensitiveStringMatcher(
             "Regex Matcher", "**next_is_regex", r"[a-z]{2}r"
         )
@@ -90,7 +87,6 @@ class TestSensitiveStringMatcher(unittest.TestCase):
         assert len(matches) == 1
         assert matches[0].colno == 3
         assert matches[0].line_part == "bar"
-
         matcher = SensitiveStringMatcher(
             "Regex Matcher", "**next_is_regex", r"[a-z]{2}z"
         )
@@ -120,22 +116,18 @@ class TestSensitiveStringMatcher(unittest.TestCase):
         matcher = SensitiveStringMatcher(
             "Basic Matcher", "foo", "**next_is_regex", r"[a-z]{2}r", "baz"
         )
-
         matches = matcher.check_lines(["foobarbaz"])
         assert len(matches) >= 1
         assert matches[0].colno == 0
         assert matches[0].line_part == "foo"
-
         matches = matcher.check_lines(["goobarbaz"])
         assert len(matches) >= 1
         assert matches[0].colno == 3
         assert matches[0].line_part == "bar"
-
         matches = matcher.check_lines(["googgrbaz"])
         assert len(matches) >= 1
         assert matches[0].colno == 3
         assert matches[0].line_part == "ggr"
-
         matches = matcher.check_lines(["goobanbaz"])
         assert len(matches) == 1
         assert matches[0].colno == 6
@@ -151,7 +143,6 @@ class TestSensitiveStringMatcher(unittest.TestCase):
         )
         matches = matcher.check_lines(["foo", "bar", "baz"])
         assert len(matches) == 0
-
         matcher = SensitiveStringMatcher(
             "Basic Matcher",
             "**all_regex",

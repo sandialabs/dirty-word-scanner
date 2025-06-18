@@ -92,7 +92,6 @@ class SensitiveStringsSearcher:
         self.git_files_only = True
         self.is_hdf5_searcher = False
         self.has_backed_up_allowed_binaries_csv = False
-
         self.matchers = self.build_matchers()
         self.matches: dict[Path, list[Match]] = {}
         self.allowed_binary_files: list[FileFingerprint] = []
@@ -165,7 +164,6 @@ class SensitiveStringsSearcher:
                     input_stream.readlines()
             except UnicodeDecodeError:
                 is_binary_file = True
-
         return is_binary_file
 
     def _enqueue_unknown_binary_files_for_later_processing(
@@ -184,7 +182,6 @@ class SensitiveStringsSearcher:
         later.
         """
         file_ff = FileFingerprint.for_file(self.root_search_dir, rel_file_path)
-
         if file_ff in self.allowed_binary_files:
             # we already know and trust this binary file
             with suppress(ValueError):
@@ -197,7 +194,6 @@ class SensitiveStringsSearcher:
     def parse_file(self, rel_file_path: Path) -> list[str]:
         file_path_norm: Path = self.norm_path(rel_file_path)
         logger.debug(file_path_norm)
-
         if self._is_binary_file(rel_file_path):
             return []
         with file_path_norm.open(newline="") as input_stream:
@@ -205,19 +201,15 @@ class SensitiveStringsSearcher:
 
     def search_lines(self, lines: list[str]) -> list[Match]:
         matches: list[Match] = []
-
         for matcher in self.matchers:
             matches += matcher.check_lines(lines)
-
         return matches
 
     def search_file(self, file_path: Path) -> list[Match]:
         lines = self.parse_file(file_path)
-
         matches: list[Match] = []
         matches += self.search_lines([f"{file_path}"])
         matches += self.search_lines(lines)
-
         return matches
 
     def get_tmp_dir(self) -> Path:
@@ -333,7 +325,6 @@ class SensitiveStringsSearcher:
         # Files created by the searcher should be removed in its
         # __del__() method.
         tmp_allowed_binary_csv_path.unlink()
-
         return matches
 
     def verify_interactively(
@@ -356,7 +347,6 @@ class SensitiveStringsSearcher:
                 resp = input("").strip()
                 val = "n" if len(resp) == 0 else resp[0]
             logger.info("    User responded '%s'", val)
-
         else:
             logger.info("")
             logger.info(
@@ -387,7 +377,6 @@ class SensitiveStringsSearcher:
                     "Did not respond with either 'y' or 'n'. Assuming 'n'."
                 )
                 val = "n"
-
         return val.lower() == "y"
 
     def _is_img_ext(self, file: Path) -> bool:
@@ -396,7 +385,6 @@ class SensitiveStringsSearcher:
     def search_binary_file(self, binary_file: FileFingerprint) -> list[Match]:
         norm_path = self.norm_path(binary_file.relative_path)
         matches: list[Match] = []
-
         if self._is_img_ext(norm_path):
             if self.interactive:
                 if self.interactive_image_sign_off(
@@ -410,13 +398,10 @@ class SensitiveStringsSearcher:
                 matches.append(
                     Match(0, 0, 0, "", "", None, "Unknown image file")
                 )
-
         elif norm_path.suffix.lower() == ".h5":
             matches += self.search_hdf5_file(binary_file)
-
         elif not self.verify_interactively(binary_file.relative_path):
             matches.append(Match(0, 0, 0, "", "", None, "Unknown binary file"))
-
         return matches
 
     def interactive_image_sign_off(
@@ -447,7 +432,6 @@ class SensitiveStringsSearcher:
                 return self.verify_interactively(file_ff.relative_path)
                 # if img is not None
             return False
-
         if np_image is None:
             return False
 
@@ -476,7 +460,6 @@ class SensitiveStringsSearcher:
 
     def _init_files_lists(self) -> None:
         self.matches.clear()
-
         if self.is_hdf5_searcher:
             # HDF5 searchers shouldn't be aware of what files are
             # contained in the HDF5 file.
@@ -493,7 +476,6 @@ class SensitiveStringsSearcher:
         self.unfound_allowed_binary_files = copy.copy(
             self.allowed_binary_files
         )
-
         self.cached_cleared_files.clear()
         self.new_cached_cleared_files.clear()
         sensitive_strings_cache = FileCache.for_file(
@@ -647,7 +629,6 @@ class SensitiveStringsSearcher:
             logger.info("")
             logger.info(file_ff.relative_path)
             num_signed_binary_files = 0
-
             if parsable_matches := self.search_binary_file(file_ff):
                 # This file is not ok. Tell the user why.
                 logger.error(
@@ -664,7 +645,6 @@ class SensitiveStringsSearcher:
                         match.lineno,
                         match.colno,
                     )
-
             else:
                 # No matches: this file is ok.
                 # Add the validated and/or signed off file to the
@@ -675,7 +655,6 @@ class SensitiveStringsSearcher:
                 # Overwrite the allowed list CSV file with the updated
                 # allowed_binary_files and make a backup as necessary.
                 self.update_allowed_binaries_csv()
-
                 num_signed_binary_files += 1
 
             # Date+time stamp the new allowed list csv files
@@ -859,7 +838,6 @@ if __name__ == "__main__":
     accept_all: bool = args.acceptall
     remove_unfound_binaries: bool = args.acceptunfound
     verbose: bool = args.verbose
-
     log_path: Path = args.log_dir / "sensitive_strings_log.txt"
     sensitive_strings_csv = args.sensitive_strings
     allowed_binary_files_csv = args.allowed_binaries
@@ -867,12 +845,10 @@ if __name__ == "__main__":
         args.cache_file if args.cache_file else log_path / "cache.csv"
     )
     date_time_str = datetime.now(tz=timezone.utc).strftime("%Y%m%d_%H%M%S")
-
     log_path = (
         log_path.parent / f"{log_path.stem}_{date_time_str}{log_path.suffix}"
     )
     logging.basicConfig(filename=log_path, level=logging.INFO)
-
     root_search_dir = Path(__file__).parents[2]
     searcher = SensitiveStringsSearcher(
         root_search_dir,
@@ -886,7 +862,6 @@ if __name__ == "__main__":
     searcher.verbose = verbose
     searcher.date_time_str = date_time_str
     num_errors = searcher.search_files()
-
     if num_errors > 0:
         sys.exit(1)
     else:

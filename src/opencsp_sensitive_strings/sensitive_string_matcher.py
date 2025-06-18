@@ -26,7 +26,6 @@ class SensitiveStringMatcher:
         self.neg_patterns: list[Union[re.Pattern, str]] = []
         self.log = logging.debug
         self.case_sensitive = False
-
         next_is_regex = False
         all_regex = False
         remaining_negative_match = False
@@ -49,7 +48,6 @@ class SensitiveStringMatcher:
                     self.case_sensitive = True
                 elif directive == "dont_match":
                     remaining_negative_match = True
-
             else:
                 pattern_to_save = (
                     re.compile(pattern)
@@ -60,7 +58,6 @@ class SensitiveStringMatcher:
                     self.patterns.append(pattern_to_save)
                 else:
                     self.neg_patterns.append(pattern_to_save)
-
                 next_is_regex = False
 
         # case insensitive matching
@@ -87,27 +84,22 @@ class SensitiveStringMatcher:
                 start = ihaystack.index(pattern)
                 end = start + len(pattern)
                 return [start, end]
-
         elif re_match := pattern.search(ihaystack):
             start, end = re_match.span()[0], re_match.span()[1]
             return [start, end]
-
         return None
 
     def _search_patterns(
         self, ihaystack: str, patterns: list[Union[re.Pattern, str]]
     ) -> dict[Union[re.Pattern, str], list[int]]:
         ret: dict[Union[re.Pattern, str], list[int]] = {}
-
         for pattern in patterns:
             if span := self._search_pattern(ihaystack, pattern):
                 ret[pattern] = span
-
         return ret
 
     def check_lines(self, lines: list[str]) -> list[Match]:
         matches: list[Match] = []
-
         for lineno, line in enumerate(lines):
             iline = line if self.case_sensitive else line.lower()
 
@@ -138,12 +130,10 @@ class SensitiveStringMatcher:
                     line_context = (
                         line_context + line[end : min(end + 5, len(line))]
                     )
-
                 match = Match(lineno + 1, start, end, line, line_part, self)
                 self.set_match_msg(match, pattern, line_context)
                 matches.append(match)
                 self.log(match.msg)
-
         return matches
 
     def set_match_msg(

@@ -13,13 +13,11 @@ class TestSensitiveStrings(unittest.TestCase):
         self.data_dir = path / "data" / "input" / "sensitive_strings"
         self.out_dir = path / "data" / "output" / "sensitive_strings"
         self.out_dir.mkdir(exist_ok=True)
-
         self.root_search_dir = self.data_dir / "root_search_dir"
         self.ss_dir = self.data_dir / "per_test_sensitive_strings"
         self.allowed_binaries_dir = self.data_dir / "per_test_allowed_binaries"
         self.all_binaries = self.allowed_binaries_dir / "all_binaries.csv"
         self.no_binaries = self.allowed_binaries_dir / "no_binaries.csv"
-
         self.patcher_update = patch.object(
             SensitiveStringsSearcher,
             "update_allowed_binaries_csv",

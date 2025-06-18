@@ -30,12 +30,10 @@ class TestFileFingerprint(unittest.TestCase):
         f1 = Path("equal_file.txt")
         f2 = Path("equal_file.txt")
         contents = f"{random.Random().random():0.10f}"  # noqa: S311
-
         self._write_text_file(d1, f1, contents)
         self._write_text_file(d2, f2, contents)
         ff1 = FileFingerprint.for_file(self.out_dir / d1, f1)
         ff2 = FileFingerprint.for_file(self.out_dir / d2, f2)
-
         assert ff1 == ff2
 
     def test_not_equal_relpath(self) -> None:
@@ -44,12 +42,10 @@ class TestFileFingerprint(unittest.TestCase):
         f1 = Path("equal_file")
         f2 = Path("equal_file")
         contents = f"{random.Random().random():0.10f}"  # noqa: S311
-
         self._write_text_file(d1, f1, contents)
         self._write_text_file(d2, f2, contents)
         ff1 = FileFingerprint.for_file(self.out_dir, d1 / f1)
         ff2 = FileFingerprint.for_file(self.out_dir, d2 / f2)
-
         assert ff1 != ff2
 
     def test_not_equal_filename(self) -> None:
@@ -58,12 +54,10 @@ class TestFileFingerprint(unittest.TestCase):
         f1 = Path("equal_file1.txt")
         f2 = Path("equal_file2.txt")
         contents = f"{random.Random().random():0.10f}"  # noqa: S311
-
         self._write_text_file(d1, f1, contents)
         self._write_text_file(d2, f2, contents)
         ff1 = FileFingerprint.for_file(self.out_dir / d1, f1)
         ff2 = FileFingerprint.for_file(self.out_dir / d2, f2)
-
         assert ff1 != ff2
 
     def test_not_equal_hash(self) -> None:
@@ -74,12 +68,10 @@ class TestFileFingerprint(unittest.TestCase):
         contents = f"{random.Random().random():0.10f}"  # noqa: S311
         contents1 = contents + " "
         contents2 = " " + contents
-
         self._write_text_file(d1, f1, contents1)
         self._write_text_file(d2, f2, contents2)
         ff1 = FileFingerprint.for_file(self.out_dir / d1, f1)
         ff2 = FileFingerprint.for_file(self.out_dir / d2, f2)
-
         assert ff1 != ff2
 
 

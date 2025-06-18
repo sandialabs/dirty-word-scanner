@@ -65,7 +65,6 @@ def get_groups_and_datasets(
 
     with h5py.File(hdf5_path_name_ext, "r") as fin:
         fin.visititems(visitor)
-
     for name, is_dataset, shape in visited:
         # Add to the file or group names list.
         # If a dataset, then include its shape.
@@ -73,7 +72,6 @@ def get_groups_and_datasets(
             group_names.append(name)
         if is_dataset:
             file_names_and_shapes.append((Path(name), shape))
-
     return group_names, file_names_and_shapes
 
 
@@ -103,7 +101,6 @@ def load_hdf5_datasets(
 
             # Save in dictionary
             kwargs[name] = data
-
     return kwargs
 
 
@@ -154,7 +151,6 @@ def extract_hdf5_to_directory(
     )
     # Extract everything else into numpy arrays
     extract_other_datasets(other_datasets, hdf5_path_name_ext, hdf5_dir)
-
     return hdf5_dir
 
 

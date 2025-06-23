@@ -583,8 +583,11 @@ class SensitiveStringsSearcher:
             len(self.unfound_allowed_binary_files) > 0
             and self.remove_unfound_binaries
         ):
-            for file in self.unfound_allowed_binary_files:
-                self.allowed_binary_files.remove(file)
+            self.allowed_binary_files = [
+                _
+                for _ in self.allowed_binary_files
+                if _ not in self.unfound_allowed_binary_files
+            ]
             self.unfound_allowed_binary_files.clear()
             self.update_allowed_binaries_csv()
         return matches

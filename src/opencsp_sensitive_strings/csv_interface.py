@@ -14,6 +14,9 @@ class CsvInterface(ABC):
             return NotImplemented
         return self.relative_path == other.relative_path
 
+    def __hash__(self) -> int:
+        return hash(self.relative_path)
+
     def csv_header(self) -> str:
         return ",".join(dataclasses.asdict(self).keys())
 

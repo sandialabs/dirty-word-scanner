@@ -19,7 +19,7 @@ from typing import Optional
 import cv2
 import numpy as np
 from PIL import UnidentifiedImageError
-from PIL.Image import Image
+from PIL.Image import Image, fromarray
 from PIL.Image import open as open_image
 
 from opencsp_sensitive_strings.csv_interface import write_to_csv
@@ -456,7 +456,7 @@ class SensitiveStringsSearcher:
 
         # Show the image and prompt the user
         return self.verify_interactively(
-            description, np_image, f"{description}{rescaled}"
+            description, fromarray(np_image), f"{description}{rescaled}"
         )
 
     def _init_files_lists(self) -> None:

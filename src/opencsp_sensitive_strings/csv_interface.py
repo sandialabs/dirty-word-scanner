@@ -51,7 +51,7 @@ class CsvInterface(ABC):
             Subclasses are encouraged to extend this method.
         """
         with file_path.open() as csv_file:
-            data_rows = list(csv.reader(csv_file, delimiter=","))
+            data_rows = list(csv.reader(csv_file))
         return [cls.from_csv_line(row) for row in data_rows[1:]]
 
 

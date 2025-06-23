@@ -1,7 +1,10 @@
 import csv
 import dataclasses
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from pathlib import Path
+
+from typing_extensions import Self
 
 
 @dataclasses.dataclass()
@@ -28,9 +31,7 @@ class CsvInterface(ABC):
 
     @classmethod
     @abstractmethod
-    def from_csv_line(
-        cls, data: list[str]
-    ) -> tuple["CsvInterface", list[str]]:
+    def from_csv_line(cls, data: list[str]) -> tuple[Self, list[str]]:
         """
         Construct an instance of a subclass from CSV line data.
 
@@ -39,9 +40,7 @@ class CsvInterface(ABC):
         """
 
     @classmethod
-    def from_csv(
-        cls, file_path: Path
-    ) -> list[tuple["CsvInterface", list[str]]]:
+    def from_csv(cls, file_path: Path) -> list[tuple[Self, list[str]]]:
         """
         Return N instances of this class from a CSV file.
 
@@ -57,7 +56,7 @@ class CsvInterface(ABC):
 
 def write_to_csv(
     file_path: Path,
-    objects: list["CsvInterface"],
+    objects: Sequence["CsvInterface"],
 ) -> None:
     """
     Create a CSV file with a header and one or more lines.

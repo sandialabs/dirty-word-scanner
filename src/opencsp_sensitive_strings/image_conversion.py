@@ -10,12 +10,12 @@ def numpy_to_image(
     """Convert the numpy representation of an image to a Pillow Image.
 
     Coverts the given arr to an Image. The array is converted to an integer
-    type, as necessary. The color information is then rescaled/clipd to fit
+    type, as necessary. The color information is then rescaled/clipped to fit
     within an 8-bit color depth.
 
     In theory, images can be saved with higher bit-depth information using
-    opencv imwrite('12bitimage.png', arr), but I (BGB) haven't tried very hard
-    and haven't had any luck getting this to work.
+    OpenCV's imwrite('12-bit-image.png', arr), but I (BGB) haven't tried very
+    hard and haven't had any luck getting this to work.
 
     Parameters
     ----------
@@ -56,7 +56,7 @@ def numpy_to_image(
     else:
         int_type = arr.dtype
 
-    # rescale down to 8-bit if bitdepth is too large
+    # rescale down to 8-bit if bit depth is too large
     if np.iinfo(int_type).max > EIGHT_BIT_DEPTH:
         if rescale_or_clip == "rescale":
             if rescale_max < 0:

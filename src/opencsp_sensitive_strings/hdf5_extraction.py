@@ -30,8 +30,7 @@ def is_dataset_and_shape(
     """
     if not isinstance(entity, h5py.Group):
         if isinstance(entity, h5py.Dataset):
-            dset: h5py.Dataset = entity
-            return True, dset.shape
+            return True, entity.shape
         return True, ()
     return False, ()
 
@@ -81,7 +80,7 @@ def load_hdf5_datasets(
     """Loads datasets from HDF5 file"""
     with h5py.File(file, "r") as f:
         kwargs: dict[str, Union[str, h5py.Dataset]] = {}
-        # Loop through fields to retreive
+        # Loop through fields to retrieve
         for dataset in datasets:
             # Get data and get dataset name
             data = f[f"{dataset}"]

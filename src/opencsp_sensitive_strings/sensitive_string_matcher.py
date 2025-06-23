@@ -79,7 +79,7 @@ class SensitiveStringMatcher:
         self, ihaystack: str, pattern: Union[re.Pattern, str]
     ) -> Optional[list[int]]:
         if isinstance(pattern, str):
-            # Check for occurances of string literals
+            # Check for occurrences of string literals
             if pattern in ihaystack:
                 start = ihaystack.index(pattern)
                 end = start + len(pattern)

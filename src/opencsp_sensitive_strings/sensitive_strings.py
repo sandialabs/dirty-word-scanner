@@ -568,7 +568,7 @@ class SensitiveStringsSearcher:
                 self._register_file_in_cleared_cache(file)
             # need to check this file
             elif self._is_binary_file(file):
-                # deal with non-parseable binary files as a group, below
+                # deal with non-parsable binary files as a group, below
                 self._enqueue_unknown_binary_files_for_later_processing(file)
             else:
                 # check text files for sensitive strings

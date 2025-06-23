@@ -22,6 +22,7 @@ from PIL import UnidentifiedImageError
 from PIL.Image import Image
 from PIL.Image import open as open_image
 
+from opencsp_sensitive_strings.csv_interface import write_to_csv
 from opencsp_sensitive_strings.file_cache import FileCache
 from opencsp_sensitive_strings.file_fingerprint import FileFingerprint
 from opencsp_sensitive_strings.hdf5_extraction import extract_hdf5_to_directory
@@ -506,7 +507,7 @@ class SensitiveStringsSearcher:
         if not self.has_backed_up_allowed_binaries_csv:
             self.create_backup_allowed_binaries_csv()
         self.allowed_binary_files = sorted(self.allowed_binary_files)
-        self.allowed_binary_files[0].to_csv(
+        write_to_csv(
             self.allowed_binary_files_csv,
             self.allowed_binary_files,
         )
@@ -694,7 +695,7 @@ class SensitiveStringsSearcher:
             and len(self.new_cached_cleared_files) > 0
         ):
             self.cache_file_csv.parent.mkdir(parents=True, exist_ok=True)
-            self.new_cached_cleared_files[0].to_csv(
+            write_to_csv(
                 self.cache_file_csv,
                 self.new_cached_cleared_files,
             )

@@ -9,7 +9,7 @@ def numpy_to_image(
 ) -> Image:
     """Convert the numpy representation of an image to a Pillow Image.
 
-    Coverts the given arr to an Image. The array is converted to an integer
+    Converts the given arr to an Image. The array is converted to an integer
     type, as necessary. The color information is then rescaled/clipped to fit
     within an 8-bit color depth.
 
@@ -35,7 +35,7 @@ def numpy_to_image(
     image: PIL.Image
         The image representation of the input array.
     """
-    allowed_int_types = [
+    allowed_int_types: list[type] = [
         np.int8,
         np.uint8,
         np.int16,

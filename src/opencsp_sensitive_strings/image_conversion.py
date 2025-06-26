@@ -1,38 +1,32 @@
+"""
+Handles converting NumPy arrays to Pillow Images.
+"""
 import numpy as np
 from PIL.Image import Image, fromarray
 
 EIGHT_BIT_DEPTH = 255
 
 
-def numpy_to_image(
-    arr: np.ndarray, rescale_or_clip: str = "rescale", rescale_max: int = -1
-) -> Image:
-    """Convert the numpy representation of an image to a Pillow Image.
+def numpy_to_image(array: np.ndarray, *, rescale: bool = True) -> Image:
+    """
+    Convert the NumPy representation of an image to a Pillow Image.
 
-    Converts the given arr to an Image. The array is converted to an integer
-    type, as necessary. The color information is then rescaled/clipped to fit
+    The array is converted to an integer type, as necessary.  The color
+    information is then optionally rescaled and then clipped to fit
     within an 8-bit color depth.
 
-    In theory, images can be saved with higher bit-depth information using
-    OpenCV's imwrite('12-bit-image.png', arr), but I (BGB) haven't tried very
-    hard and haven't had any luck getting this to work.
+    Note:
+        In theory, images can be saved with higher bit-depth information
+        using OpenCV's ``imwrite('12-bit-image.png', array)``, but we
+        haven't tried very hard and haven't had any luck getting this to
+        work.
 
-    Parameters
-    ----------
-    arr : np.ndarray
-        The array to be converted.
-    rescale_or_clip : str, optional
-        Whether to rescale the value in the array to fit within 0-255, or to
-        clip the values so that anything over 255 is set to 255. By default
-        'rescale'.
-    rescale_max : int, optional
-        The maximum value expected in the input arr, which will be set to 255.
-        When less than 0, the maximum of the input array is used. Only
-        applicable when rescale_or_clip='rescale'. By default -1.
+    Args:
+        array:  The array to be converted.
+        rescale:  Whether to rescale the value in the array to fit
+            within 0-255.
 
-    Returns
-    -------
-    image: PIL.Image
+    Returns:
         The image representation of the input array.
     """
     allowed_int_types: list[type] = [
@@ -47,22 +41,20 @@ def numpy_to_image(
     ]
 
     # get the current integer size, and convert to integer type
-    if not np.issubdtype(arr.dtype, np.integer):
-        maxval = np.max(arr)
+    if not np.issubdtype(array.dtype, np.integer):
+        maximum = np.max(array)
         for int_type in allowed_int_types:
-            if np.iinfo(int_type).max >= maxval:
+            if np.iinfo(int_type).max >= maximum:
                 break
-        arr = arr.astype(int_type)
+        array = array.astype(int_type)
     else:
-        int_type = arr.dtype
+        int_type = array.dtype
 
     # rescale down to 8-bit if bit depth is too large
     if np.iinfo(int_type).max > EIGHT_BIT_DEPTH:
-        if rescale_or_clip == "rescale":
-            if rescale_max < 0:
-                rescale_max = np.max(arr)
-            scale = 255 / rescale_max
-            arr = arr * scale
-        arr = np.clip(arr, 0, 255)
-        arr = arr.astype(np.uint8)
-    return fromarray(arr)
+        if rescale:
+            scale = 255 / np.max(array)
+            array = array * scale
+        array = np.clip(array, 0, 255)
+        array = array.astype(np.uint8)
+    return fromarray(array)

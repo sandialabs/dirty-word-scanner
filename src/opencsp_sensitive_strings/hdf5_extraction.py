@@ -1,3 +1,6 @@
+"""
+Handles extracting the contents of HDF5 files.
+"""
 from pathlib import Path
 from typing import Optional, Union
 
@@ -11,7 +14,16 @@ MIN_PIXELS = 10
 
 
 def _get_datasets(hdf5_file: Path) -> list[Path]:
-    """Get the dataset names from a HDF5 file."""
+    """
+    Get the dataset names from a HDF5 file.
+
+    Args:
+        hdf5_file:  The HDF5 file to read.
+
+    Returns:
+        The names of (i.e., paths to) the dataset objects within the
+        file.
+    """
     datasets: list[Path] = []
     with h5py.File(hdf5_file, "r") as input_file:
         input_file.visititems(
@@ -25,33 +37,76 @@ def _get_datasets(hdf5_file: Path) -> list[Path]:
 def _get_scalar_value(
     data: h5py.Dataset,
 ) -> Union[str, float, int, np.bytes_, bytes]:
-    """Retrieve the scalar value from the dataset."""
+    """
+    Retrieve the scalar value from the dataset.
+
+    Args:
+        data:  The dataset in question.
+
+    Returns:
+        The scalar value.
+    """
     return data[()]
 
 
 def _get_single_element_value(
     data: h5py.Dataset,
 ) -> Union[str, float, int, np.bytes_, bytes]:
-    """Flatten the dataset and return the first element."""
+    """
+    Flatten the dataset and return the first element.
+
+    Args:
+        data:  The dataset in question.
+
+    Returns:
+        The first element.
+    """
     return data[...].flatten()[0]
 
 
 def _get_non_empty_array(data: h5py.Dataset) -> np.ndarray:
-    """Squeeze the dataset to remove singleton dimensions."""
+    """
+    Squeeze the dataset to remove singleton dimensions.
+
+    Args:
+        data:  The dataset in question.
+
+    Returns:
+        The corresponding NumPy array with any extraneous dimensions
+        removed.
+    """
     return data[...].squeeze()
 
 
 def _decode_if_bytes(
-    values: Optional[Union[str, float, int, np.bytes_, bytes, np.ndarray]],
+    value: Optional[Union[str, float, int, np.bytes_, bytes, np.ndarray]],
 ) -> Optional[Union[str, float, int, np.ndarray]]:
-    """Decode byte data to string if necessary."""
+    """
+    Decode byte data to string if necessary.
+
+    Args:
+        value:  The value to decode.
+
+    Returns:
+        The decoded string, if the input was of a bytes type; otherwise
+        the input value, unaltered.
+    """
     return value.decode() if isinstance(value, (np.bytes_, bytes)) else value
 
 
 def _load_dataset_from_file(
     dataset: Path, file: Path
 ) -> Optional[Union[str, float, int, np.ndarray]]:
-    """Loads the requested dataset from a HDF5 file."""
+    """
+    Load the requested dataset from a HDF5 file.
+
+    Args:
+        dataset:  The path to the dataset within the HDF5 file.
+        file:  The HDF5 file from which to load the dataset.
+
+    Returns:
+        The loaded dataset value.
+    """
     with h5py.File(file, "r") as input_file:
         data: h5py.Dataset = input_file[f"{dataset}"]
         is_scalar = np.ndim(data) == 0 and np.size(data) == 1
@@ -72,6 +127,17 @@ def _extract_string(
     value: Optional[Union[str, float, int, np.ndarray]],
     dataset: Path,
 ) -> bool:
+    """
+    Extract a string value and save it to a text file.
+
+    Args:
+        value:  The value to extract.
+        dataset:  The location of the dataset.
+
+    Returns:
+        ``True`` if the value was processed as a string, otherwise
+        ``False``.
+    """
     if isinstance(value, str):
         with dataset.with_suffix(".txt").open("w") as output_file:
             output_file.write(value)
@@ -83,6 +149,17 @@ def _extract_images(
     value: Optional[Union[str, float, int, np.ndarray]],
     dataset: Path,
 ) -> bool:
+    """
+    Extract image data and save it as one or more PNG files.
+
+    Args:
+        value:  The value to extract, expected to be an image array.
+        dataset:  The location of the dataset.
+
+    Returns:
+        ``True`` if the value was processed as an image, otherwise
+        ``False``.
+    """
     if not isinstance(value, np.ndarray):
         return False
     shape = value.shape
@@ -117,23 +194,34 @@ def _extract_other_dataset(
     value: Optional[Union[str, float, int, np.ndarray]],
     dataset: Path,
 ) -> bool:
+    """
+    Extract other types of datasets and save them as NumPy files.
+
+    Args:
+        value:  The value to extract.
+        dataset:  The location of the dataset.
+
+    Returns:
+        ``True``, because if a dataset gets this far, it will always be
+        processed as an arbitrary NumPy file.
+    """
     np.save(dataset.with_suffix(""), np.array(value), allow_pickle=False)
     return True
 
 
 def extract_hdf5_to_directory(hdf5_file: Path, destination: Path) -> Path:
-    """Unpacks the given HDF5 file into the given destination directory.
+    """
+    Extract the given HDF5 file into the given destination directory.
 
-    Unpacks the given HDF5 file into the given destination directory.  A
-    new directory is created in the destination with the same name as
+    A new directory is created in the destination with the same name as
     the HDF5 file.  String values are extracted as ``.txt`` files, and
     images are extracted as ``.png`` files.  Everything else is saved
-    with numpy as ``.npy`` files.
+    with NumPy as ``.npy`` files.
 
     Parameters:
-        hdf5_path_name_ext:  The HDF5 file to unpack.
-        destination_dir:  The directory in which to create a directory
-            for the HDF5 file.
+        hdf5_file:  The HDF5 file to extract.
+        destination:  The directory in which to create a directory for
+            the HDF5 file.
 
     Returns:
         The path to the newly created directory into which the HDF5

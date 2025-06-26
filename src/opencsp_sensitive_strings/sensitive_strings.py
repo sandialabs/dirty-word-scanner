@@ -252,24 +252,19 @@ class SensitiveStringsSearcher:
                 logger.warning("    %s:", file)
                 previous_file = file
             for match in file_matches:
-                logger.warning(
-                    "        %s (line %d, col %d)",
-                    match.msg,
-                    match.lineno,
-                    match.colno,
-                )
+                logger.warning("        %s", match.message)
 
         # Ask the user about signing off
         if self.interactive:
             if not self.verify_interactively(file):
                 matches.append(
-                    Match(0, 0, 0, "", "", None, "HDF5 file denied by user")
+                    Match(0, 0, 0, "", "", "HDF5 file denied by user")
                 )
         else:  # if self.interactive
             for file, file_matches in hdf5_matches.items():
                 for match in file_matches:
                     dataset_name = file.with_suffix("")
-                    match.msg = f"{dataset_name}::{match.msg}"
+                    match.message = f"{dataset_name}::{match.message}"
                     matches.append(match)
 
     def search_hdf5_file(self, hdf5_file: FileFingerprint) -> list[Match]:
@@ -392,17 +387,13 @@ class SensitiveStringsSearcher:
                     norm_path, file_ff=binary_file
                 ):
                     return []
-                matches.append(
-                    Match(0, 0, 0, "", "", None, "File denied by user")
-                )
+                matches.append(Match(0, 0, 0, "", "", "File denied by user"))
             else:
-                matches.append(
-                    Match(0, 0, 0, "", "", None, "Unknown image file")
-                )
+                matches.append(Match(0, 0, 0, "", "", "Unknown image file"))
         elif norm_path.suffix.lower() == ".h5":
             matches += self.search_hdf5_file(binary_file)
         elif not self.verify_interactively(binary_file.relative_path):
-            matches.append(Match(0, 0, 0, "", "", None, "Unknown binary file"))
+            matches.append(Match(0, 0, 0, "", "", "Unknown binary file"))
         return matches
 
     def interactive_image_sign_off(
@@ -605,7 +596,7 @@ class SensitiveStringsSearcher:
             for file, file_matches in matches.items():
                 logger.error("    File %s:", file)
                 for match in file_matches:
-                    logger.error("        %s", match.msg)
+                    logger.error("        %s", match.message)
         if len(self.unfound_allowed_binary_files) > 0:
             logger.error(
                 "Expected binary files that can't be found:",
@@ -643,12 +634,7 @@ class SensitiveStringsSearcher:
                     },
                 )
                 for match in parsable_matches:
-                    logger.error(
-                        "    %s (line %d, col %d)",
-                        match.msg,
-                        match.lineno,
-                        match.colno,
-                    )
+                    logger.error("    %s", match.message)
             else:
                 # No matches: this file is ok.
                 # Add the validated and/or signed off file to the
@@ -739,7 +725,6 @@ class SensitiveStringsSearcher:
                         0,
                         "",
                         "",
-                        None,
                         f"Unfound binary file {file_ff.relative_path}",
                     )
                 )
@@ -754,7 +739,6 @@ class SensitiveStringsSearcher:
                     0,
                     "",
                     "",
-                    None,
                     f"Unknown binary file {file_ff.relative_path}",
                 )
             )

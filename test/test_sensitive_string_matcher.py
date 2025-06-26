@@ -9,8 +9,8 @@ from opencsp_sensitive_strings.sensitive_string_matcher import (
     (
         "patterns",
         "lines_to_check",
-        "expected_lines",
-        "expected_columns",
+        "expected_line_numbers",
+        "expected_column_starts",
         "expected_line_parts",
     ),
     [
@@ -128,16 +128,24 @@ from opencsp_sensitive_strings.sensitive_string_matcher import (
 def test_check_lines(
     patterns: list[str],
     lines_to_check: list[str],
-    expected_lines: list[int],
-    expected_columns: list[int],
+    expected_line_numbers: list[int],
+    expected_column_starts: list[int],
     expected_line_parts: list[str],
 ) -> None:
     matcher = SensitiveStringMatcher("Basic Matcher", *patterns)
     matches = matcher.check_lines(lines_to_check)
-    assert len(matches) == len(expected_lines)
-    for match, expected_line, expected_column, expected_line_part in zip(
-        matches, expected_lines, expected_columns, expected_line_parts
+    assert len(matches) == len(expected_line_numbers)
+    for (
+        match,
+        expected_line_number,
+        expected_column_start,
+        expected_line_part,
+    ) in zip(
+        matches,
+        expected_line_numbers,
+        expected_column_starts,
+        expected_line_parts,
     ):
-        assert match.lineno == expected_line
-        assert match.colno == expected_column
+        assert match.line_number == expected_line_number
+        assert match.column_start == expected_column_start
         assert match.line_part == expected_line_part

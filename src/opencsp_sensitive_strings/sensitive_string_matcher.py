@@ -10,25 +10,29 @@ logger = logging.getLogger(__name__)
 
 @dataclasses.dataclass
 class Match:
-    lineno: int
-    colno: int
-    colend: int
+    line_number: int
+    column_start: int
+    column_end: int
     line: str
     line_part: str
-    matcher: Optional[SensitiveStringMatcher]
-    msg: str = ""
+    message: str
 
 
 class SensitiveStringMatcher:
     def __init__(self, name: str, *patterns: str) -> None:
         self.name = name
         self.patterns: list[Union[re.Pattern, str]] = []
-        self.neg_patterns: list[Union[re.Pattern, str]] = []
+        self.negative_patterns: list[Union[re.Pattern, str]] = []
         self.log = logging.debug
         self.case_sensitive = False
+        self._process_patterns(patterns)
+        if not self.case_sensitive:
+            self._lowercase_patterns()
+
+    def _process_patterns(self, patterns: tuple[str, ...]) -> None:
         next_is_regex = False
         all_regex = False
-        remaining_negative_match = False
+        dont_match = False
         log_levels = {
             "debug": logging.debug,
             "info": logging.info,
@@ -47,101 +51,76 @@ class SensitiveStringMatcher:
                 elif directive == "case_sensitive":
                     self.case_sensitive = True
                 elif directive == "dont_match":
-                    remaining_negative_match = True
+                    dont_match = True
             else:
                 pattern_to_save = (
                     re.compile(pattern)
                     if (next_is_regex or all_regex)
                     else pattern
                 )
-                if not remaining_negative_match:
-                    self.patterns.append(pattern_to_save)
-                else:
-                    self.neg_patterns.append(pattern_to_save)
                 next_is_regex = False
+                if dont_match:
+                    self.negative_patterns.append(pattern_to_save)
+                else:
+                    self.patterns.append(pattern_to_save)
 
-        # case insensitive matching
-        if not self.case_sensitive:
-            self.patterns = [
-                _.lower()
-                if isinstance(_, str)
-                else re.compile(_.pattern.lower())
-                for _ in self.patterns
-            ]
-            self.neg_patterns = [
-                _.lower()
-                if isinstance(_, str)
-                else re.compile(_.pattern.lower())
-                for _ in self.neg_patterns
-            ]
+    def _lowercase_patterns(self) -> None:
+        self.patterns = [
+            _.lower() if isinstance(_, str) else re.compile(_.pattern.lower())
+            for _ in self.patterns
+        ]
+        self.negative_patterns = [
+            _.lower() if isinstance(_, str) else re.compile(_.pattern.lower())
+            for _ in self.negative_patterns
+        ]
 
     def _search_pattern(
-        self, ihaystack: str, pattern: Union[re.Pattern, str]
-    ) -> Optional[list[int]]:
+        self, line: str, pattern: Union[re.Pattern, str]
+    ) -> Optional[tuple[int, int]]:
         if isinstance(pattern, str):
-            # Check for occurrences of string literals
-            if pattern in ihaystack:
-                start = ihaystack.index(pattern)
-                end = start + len(pattern)
-                return [start, end]
-        elif re_match := pattern.search(ihaystack):
-            start, end = re_match.span()[0], re_match.span()[1]
-            return [start, end]
+            if pattern in line:
+                column_start = line.index(pattern)
+                column_end = column_start + len(pattern)
+                return column_start, column_end
+        elif match := pattern.search(line):
+            return match.span()
         return None
 
     def _search_patterns(
-        self, ihaystack: str, patterns: list[Union[re.Pattern, str]]
-    ) -> dict[Union[re.Pattern, str], list[int]]:
-        ret: dict[Union[re.Pattern, str], list[int]] = {}
-        for pattern in patterns:
-            if span := self._search_pattern(ihaystack, pattern):
-                ret[pattern] = span
-        return ret
+        self, line: str
+    ) -> dict[Union[re.Pattern, str], tuple[int, int]]:
+        matches: dict[Union[re.Pattern, str], tuple[int, int]] = {}
+        for pattern in self.patterns:
+            if columns := self._search_pattern(line, pattern):
+                line_part = line[columns[0] : columns[1]]
+                if not any(
+                    self._search_pattern(line_part, _)
+                    for _ in self.negative_patterns
+                ):
+                    matches[pattern] = columns
+        return matches
 
     def check_lines(self, lines: list[str]) -> list[Match]:
         matches: list[Match] = []
-        for lineno, line in enumerate(lines):
-            iline = line if self.case_sensitive else line.lower()
-
-            # Check for matching patterns in this line
-            possible_matching = self._search_patterns(iline, self.patterns)
-
-            # Filter out negative matches in the matching patterns
-            matching: dict[Union[re.Pattern, str], list[int]] = {}
-            for pattern in possible_matching:
-                span = possible_matching[pattern]
-                line_part = iline[span[0] : span[1]]
-                if (
-                    len(self._search_patterns(line_part, self.neg_patterns))
-                    == 0
-                ):
-                    matching[pattern] = span
-
-            # Register the matches
-            for pattern, span in matching.items():
-                start, end = span[0], span[1]
-                line_part = line[start:end]
-                line_context = f"`{line_part}`"
-                if start > 0:
-                    line_context = (
-                        line[max(start - 5, 0) : start] + line_context
-                    )
-                if end < len(line):
-                    line_context = (
-                        line_context + line[end : min(end + 5, len(line))]
-                    )
-                match = Match(lineno + 1, start, end, line, line_part, self)
-                self.set_match_msg(match, pattern, line_context)
+        for line_number, line in enumerate(lines, start=1):
+            line_to_search = line if self.case_sensitive else line.lower()
+            for pattern, (column_start, column_end) in self._search_patterns(
+                line_to_search
+            ).items():
+                line_part = line[column_start:column_end]
+                start_context = line[max(column_start - 5, 0) : column_start]
+                end_context = line[column_end : min(column_end + 5, len(line))]
+                line_context = f"{start_context}`{line_part}`{end_context}"
+                match = Match(
+                    line_number,
+                    column_start,
+                    column_end,
+                    line,
+                    line_part,
+                    f"'{self.name}' string matched to pattern '{pattern}' on "
+                    f"line {line_number} [{column_start}:{column_end}]: "
+                    f'"{line_context.strip()}" ("{line.strip()}")',
+                )
                 matches.append(match)
-                self.log(match.msg)
+                self.log(match.message)
         return matches
-
-    def set_match_msg(
-        self, match: Match, pattern: Union[re.Pattern, str], line_context: str
-    ) -> None:
-        log_msg = (
-            f"'{self.name}' string matched to pattern '{pattern}' on line "
-            f"{match.lineno} [{match.colno}:{match.colend}]: "
-            f'"{line_context.strip()}" ("{match.line.strip()}")'
-        )
-        match.msg = log_msg

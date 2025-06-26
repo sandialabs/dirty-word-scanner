@@ -1,3 +1,6 @@
+"""
+Handles finding sensitive strings in text.
+"""
 from __future__ import annotations
 
 import dataclasses
@@ -10,16 +13,50 @@ logger = logging.getLogger(__name__)
 
 @dataclasses.dataclass
 class Match:
+    """Represents a match found in a line of text."""
+
     line_number: int
+    """The line number where the match was found."""
+
     column_start: int
+    """The starting index of the match in the line."""
+
     column_end: int
+    """The ending index of the match in the line."""
+
     line: str
+    """The full line of text where the match was found."""
+
     line_part: str
+    """The part of the line that matched the pattern."""
+
     message: str
+    """A message describing the match."""
 
 
 class SensitiveStringMatcher:
+    """
+    A class for matching sensitive strings against patterns.
+
+    Attributes:
+        name (str):  The name of the matcher.
+        patterns (list[Union[re.Pattern, str]]):  The patterns to match
+            against.
+        negative_patterns (list[Union[re.Pattern, str]]):  Patterns that
+            should not match.
+        log (callable):  The logging function to use for messages.
+        case_sensitive (bool):  Flag indicating whether matching should
+            be case sensitive.
+    """
+
     def __init__(self, name: str, *patterns: str) -> None:
+        """
+        Initialize the object.
+
+        Args:
+            name:  The name of the matcher.
+            patterns:  A variable number of patterns to process.
+        """
         self.name = name
         self.patterns: list[Union[re.Pattern, str]] = []
         self.negative_patterns: list[Union[re.Pattern, str]] = []
@@ -30,6 +67,17 @@ class SensitiveStringMatcher:
             self._lowercase_patterns()
 
     def _process_patterns(self, patterns: tuple[str, ...]) -> None:
+        """
+        Process the provided patterns and configure the matcher.
+
+        The patterns may simply be a list of patterns to search for, but
+        the list may also include one or more directives (prefaced with
+        ``**``) to control either the matcher or the patterns for which
+        it will search.
+
+        Args:
+            patterns:  The patterns to process.
+        """
         next_is_regex = False
         all_regex = False
         dont_match = False
@@ -65,6 +113,7 @@ class SensitiveStringMatcher:
                     self.patterns.append(pattern_to_save)
 
     def _lowercase_patterns(self) -> None:
+        """Convert all patterns to lowercase for case-insensitive matching."""
         self.patterns = [
             _.lower() if isinstance(_, str) else re.compile(_.pattern.lower())
             for _ in self.patterns
@@ -77,6 +126,17 @@ class SensitiveStringMatcher:
     def _search_pattern(
         self, line: str, pattern: Union[re.Pattern, str]
     ) -> Optional[tuple[int, int]]:
+        """
+        Search for a single pattern in the given line.
+
+        Args:
+            line:  The line of text to search.
+            pattern:  The pattern for which to search.
+
+        Returns:
+            The start and end indices of the match, or ``None`` if no
+            match is found.
+        """
         if isinstance(pattern, str):
             if pattern in line:
                 column_start = line.index(pattern)
@@ -89,6 +149,18 @@ class SensitiveStringMatcher:
     def _search_patterns(
         self, line: str
     ) -> dict[Union[re.Pattern, str], tuple[int, int]]:
+        """
+        Search for all configured patterns in the given line.
+
+        Exclude anything that also matches a ``**dont_match`` pattern.
+
+        Args:
+            line:  The line of text to search.
+
+        Returns:
+            A mapping from patterns to their start and end indices in
+            the line of text.
+        """
         matches: dict[Union[re.Pattern, str], tuple[int, int]] = {}
         for pattern in self.patterns:
             if columns := self._search_pattern(line, pattern):
@@ -101,6 +173,15 @@ class SensitiveStringMatcher:
         return matches
 
     def check_lines(self, lines: list[str]) -> list[Match]:
+        """
+        Check the lines for any matches and log the results.
+
+        Args:
+            lines:  The lines of text to check.
+
+        Returns:
+            Any matches found.
+        """
         matches: list[Match] = []
         for line_number, line in enumerate(lines, start=1):
             line_to_search = line if self.case_sensitive else line.lower()

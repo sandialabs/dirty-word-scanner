@@ -9,7 +9,7 @@ from pathlib import Path
 import h5py
 import numpy as np
 
-from opencsp_sensitive_strings.image_conversion import numpy_to_image
+from opencsp_sensitive_strings.image import numpy_to_image
 
 MAX_ASPECT_RATIO = 10
 MIN_PIXELS = 10

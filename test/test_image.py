@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from src.opencsp_sensitive_strings.image_conversion import numpy_to_image
+from opencsp_sensitive_strings.image import numpy_to_image
 
 
 @pytest.mark.parametrize(

@@ -25,7 +25,7 @@ from opencsp_sensitive_strings.csv_interface import write_to_csv
 from opencsp_sensitive_strings.file_cache import FileCache
 from opencsp_sensitive_strings.file_fingerprint import FileFingerprint
 from opencsp_sensitive_strings.hdf5_extraction import extract_hdf5_to_directory
-from opencsp_sensitive_strings.image_conversion import numpy_to_image
+from opencsp_sensitive_strings.image import is_image, numpy_to_image
 from opencsp_sensitive_strings.sensitive_string_matcher import (
     Match,
     SensitiveStringMatcher,
@@ -37,48 +37,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 MAX_WIDTH, MAX_HEIGHT = 1920, 1080
 MAX_FILE_SIZE = 1e6
-
-
-def is_image(file: Path) -> bool:
-    """
-    Is the file an image?
-
-    TODO:  This needs to be located elsewhere, just not sure where yet.
-
-    Args:
-        file:  The file in question.
-
-    Returns:
-        Whether the file can be handled by the Python Imaging Library
-        (PIL), based on its extension.
-    """
-    return file.suffix.lower().lstrip(".") in [
-        "apng",
-        "blp",
-        "bmp",
-        "dds",
-        "dib",
-        "eps",
-        "gif",
-        "icns",
-        "ico",
-        "im",
-        "jpg",
-        "jpeg",
-        "msp",
-        "pbm",
-        "pcx",
-        "pgm",
-        "ppm",
-        "png",
-        "pnm",
-        "sgi",
-        "spider",
-        "tga",
-        "tiff",
-        "webp",
-        "xbm",
-    ]
 
 
 class SensitiveStringsSearcher:

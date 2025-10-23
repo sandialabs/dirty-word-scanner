@@ -2,10 +2,52 @@
 Handles converting NumPy arrays to Pillow Images.
 """
 
+from pathlib import Path
+
 import numpy as np
 from PIL.Image import Image, fromarray
 
 EIGHT_BIT_DEPTH = 255
+
+
+def is_image(file: Path) -> bool:
+    """
+    Is the file an image?
+
+    Args:
+        file:  The file in question.
+
+    Returns:
+        Whether the file can be handled by the Python Imaging Library
+        (PIL), based on its extension.
+    """
+    return file.suffix.lower().lstrip(".") in [
+        "apng",
+        "blp",
+        "bmp",
+        "dds",
+        "dib",
+        "eps",
+        "gif",
+        "icns",
+        "ico",
+        "im",
+        "jpg",
+        "jpeg",
+        "msp",
+        "pbm",
+        "pcx",
+        "pgm",
+        "ppm",
+        "png",
+        "pnm",
+        "sgi",
+        "spider",
+        "tga",
+        "tiff",
+        "webp",
+        "xbm",
+    ]
 
 
 def numpy_to_image(array: np.ndarray, *, rescale: bool = True) -> Image:

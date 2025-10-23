@@ -15,114 +15,38 @@ MAX_ASPECT_RATIO = 10
 MIN_PIXELS = 10
 
 
-def _get_datasets(hdf5_file: Path) -> list[Path]:
+def extract_hdf5_to_directory(hdf5_file: Path, destination: Path) -> Path:
     """
-    Get the dataset names from a HDF5 file.
+    Extract the given HDF5 file into the given destination directory.
 
-    Args:
-        hdf5_file:  The HDF5 file to read.
+    A new directory is created in the destination with the same name as
+    the HDF5 file.  String values are extracted as ``.txt`` files, and
+    images are extracted as ``.png`` files.  Everything else is saved
+    with NumPy as ``.npy`` files.
+
+    Parameters:
+        hdf5_file:  The HDF5 file to extract.
+        destination:  The directory in which to create a directory for
+            the HDF5 file.
 
     Returns:
-        The names of (i.e., paths to) the dataset objects within the
-        file.
+        The path to the newly created directory into which the HDF5
+        files were extracted.
     """
-    datasets: list[Path] = []
-    with h5py.File(hdf5_file, "r") as input_file:
-        input_file.visititems(
-            lambda name, entity: datasets.append(Path(name))
-            if isinstance(entity, h5py.Dataset)
-            else None
-        )
-    return datasets
-
-
-def _get_scalar_value(
-    data: h5py.Dataset,
-) -> str | float | np.bytes_ | bytes:
-    """
-    Retrieve the scalar value from the dataset.
-
-    Args:
-        data:  The dataset in question.
-
-    Returns:
-        The scalar value.
-    """
-    return data[()]
-
-
-def _get_single_element_value(
-    data: h5py.Dataset,
-) -> str | float | np.bytes_ | bytes:
-    """
-    Flatten the dataset and return the first element.
-
-    Args:
-        data:  The dataset in question.
-
-    Returns:
-        The first element.
-    """
-    return data[...].flatten()[0]
-
-
-def _get_non_empty_array(data: h5py.Dataset) -> np.ndarray:
-    """
-    Squeeze the dataset to remove singleton dimensions.
-
-    Args:
-        data:  The dataset in question.
-
-    Returns:
-        The corresponding NumPy array with any extraneous dimensions
-        removed.
-    """
-    return data[...].squeeze()
-
-
-def _decode_if_bytes(
-    value: str | float | np.bytes_ | bytes | np.ndarray | None,
-) -> str | float | np.ndarray | None:
-    """
-    Decode byte data to string if necessary.
-
-    Args:
-        value:  The value to decode.
-
-    Returns:
-        The decoded string, if the input was of a bytes type; otherwise
-        the input value, unaltered.
-    """
-    return value.decode() if isinstance(value, (np.bytes_, bytes)) else value
-
-
-def _load_dataset_from_file(
-    dataset: Path, file: Path
-) -> str | float | np.ndarray | None:
-    """
-    Load the requested dataset from a HDF5 file.
-
-    Args:
-        dataset:  The path to the dataset within the HDF5 file.
-        file:  The HDF5 file from which to load the dataset.
-
-    Returns:
-        The loaded dataset value.
-    """
-    with h5py.File(file, "r") as input_file:
-        data: h5py.Dataset = input_file[f"{dataset}"]
-        is_scalar = np.ndim(data) == 0 and np.size(data) == 1
-        is_single_element_array = np.ndim(data) > 0 and np.size(data) == 1
-        is_non_empty_array = np.size(data) > 0
-        return _decode_if_bytes(
-            _get_scalar_value(data)
-            if is_scalar
-            else _get_single_element_value(data)
-            if is_single_element_array
-            else _get_non_empty_array(data)
-            if is_non_empty_array
-            else None
-        )
+    hdf5_directory = destination / hdf5_file.name
+    hdf5_directory.mkdir(exist_ok=True, parents=True)
+    extraction_functions = [
+        _extract_string,
+        _extract_images,
+        _extract_other_dataset,
+    ]
+    for dataset in _get_datasets(hdf5_file):
+        dataset.parent.mkdir(exist_ok=True, parents=True)
+        value = _load_dataset_from_file(dataset, hdf5_file)
+        for extract in extraction_functions:
+            if extract(value, hdf5_directory / dataset):
+                break
+    return hdf5_directory
 
 
 def _extract_string(
@@ -211,35 +135,111 @@ def _extract_other_dataset(
     return True
 
 
-def extract_hdf5_to_directory(hdf5_file: Path, destination: Path) -> Path:
+def _get_datasets(hdf5_file: Path) -> list[Path]:
     """
-    Extract the given HDF5 file into the given destination directory.
+    Get the dataset names from a HDF5 file.
 
-    A new directory is created in the destination with the same name as
-    the HDF5 file.  String values are extracted as ``.txt`` files, and
-    images are extracted as ``.png`` files.  Everything else is saved
-    with NumPy as ``.npy`` files.
-
-    Parameters:
-        hdf5_file:  The HDF5 file to extract.
-        destination:  The directory in which to create a directory for
-            the HDF5 file.
+    Args:
+        hdf5_file:  The HDF5 file to read.
 
     Returns:
-        The path to the newly created directory into which the HDF5
-        files were extracted.
+        The names of (i.e., paths to) the dataset objects within the
+        file.
     """
-    hdf5_directory = destination / hdf5_file.name
-    hdf5_directory.mkdir(exist_ok=True, parents=True)
-    extraction_functions = [
-        _extract_string,
-        _extract_images,
-        _extract_other_dataset,
-    ]
-    for dataset in _get_datasets(hdf5_file):
-        dataset.parent.mkdir(exist_ok=True, parents=True)
-        value = _load_dataset_from_file(dataset, hdf5_file)
-        for extract in extraction_functions:
-            if extract(value, hdf5_directory / dataset):
-                break
-    return hdf5_directory
+    datasets: list[Path] = []
+    with h5py.File(hdf5_file, "r") as input_file:
+        input_file.visititems(
+            lambda name, entity: datasets.append(Path(name))
+            if isinstance(entity, h5py.Dataset)
+            else None
+        )
+    return datasets
+
+
+def _load_dataset_from_file(
+    dataset: Path, file: Path
+) -> str | float | np.ndarray | None:
+    """
+    Load the requested dataset from a HDF5 file.
+
+    Args:
+        dataset:  The path to the dataset within the HDF5 file.
+        file:  The HDF5 file from which to load the dataset.
+
+    Returns:
+        The loaded dataset value.
+    """
+    with h5py.File(file, "r") as input_file:
+        data: h5py.Dataset = input_file[f"{dataset}"]
+        is_scalar = np.ndim(data) == 0 and np.size(data) == 1
+        is_single_element_array = np.ndim(data) > 0 and np.size(data) == 1
+        is_non_empty_array = np.size(data) > 0
+        return _decode_if_bytes(
+            _get_scalar_value(data)
+            if is_scalar
+            else _get_single_element_value(data)
+            if is_single_element_array
+            else _get_non_empty_array(data)
+            if is_non_empty_array
+            else None
+        )
+
+
+def _decode_if_bytes(
+    value: str | float | np.bytes_ | bytes | np.ndarray | None,
+) -> str | float | np.ndarray | None:
+    """
+    Decode byte data to string if necessary.
+
+    Args:
+        value:  The value to decode.
+
+    Returns:
+        The decoded string, if the input was of a bytes type; otherwise
+        the input value, unaltered.
+    """
+    return value.decode() if isinstance(value, (np.bytes_, bytes)) else value
+
+
+def _get_scalar_value(
+    data: h5py.Dataset,
+) -> str | float | np.bytes_ | bytes:
+    """
+    Retrieve the scalar value from the dataset.
+
+    Args:
+        data:  The dataset in question.
+
+    Returns:
+        The scalar value.
+    """
+    return data[()]
+
+
+def _get_single_element_value(
+    data: h5py.Dataset,
+) -> str | float | np.bytes_ | bytes:
+    """
+    Flatten the dataset and return the first element.
+
+    Args:
+        data:  The dataset in question.
+
+    Returns:
+        The first element.
+    """
+    return data[...].flatten()[0]
+
+
+def _get_non_empty_array(data: h5py.Dataset) -> np.ndarray:
+    """
+    Squeeze the dataset to remove singleton dimensions.
+
+    Args:
+        data:  The dataset in question.
+
+    Returns:
+        The corresponding NumPy array with any extraneous dimensions
+        removed.
+    """
+    return data[...].squeeze()

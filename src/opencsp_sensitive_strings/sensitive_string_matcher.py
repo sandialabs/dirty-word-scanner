@@ -123,55 +123,6 @@ class SensitiveStringMatcher:
             for _ in self.negative_patterns
         ]
 
-    def _search_pattern(
-        self, line: str, pattern: re.Pattern | str
-    ) -> tuple[int, int] | None:
-        """
-        Search for a single pattern in the given line.
-
-        Args:
-            line:  The line of text to search.
-            pattern:  The pattern for which to search.
-
-        Returns:
-            The start and end indices of the match, or ``None`` if no
-            match is found.
-        """
-        if isinstance(pattern, str):
-            if pattern in line:
-                column_start = line.index(pattern)
-                column_end = column_start + len(pattern)
-                return column_start, column_end
-        elif match := pattern.search(line):
-            return match.span()
-        return None
-
-    def _search_patterns(
-        self, line: str
-    ) -> dict[re.Pattern | str, tuple[int, int]]:
-        """
-        Search for all configured patterns in the given line.
-
-        Exclude anything that also matches a ``**dont_match`` pattern.
-
-        Args:
-            line:  The line of text to search.
-
-        Returns:
-            A mapping from patterns to their start and end indices in
-            the line of text.
-        """
-        matches: dict[re.Pattern | str, tuple[int, int]] = {}
-        for pattern in self.patterns:
-            if columns := self._search_pattern(line, pattern):
-                line_part = line[columns[0] : columns[1]]
-                if not any(
-                    self._search_pattern(line_part, _)
-                    for _ in self.negative_patterns
-                ):
-                    matches[pattern] = columns
-        return matches
-
     def check_lines(self, lines: list[str]) -> list[Match]:
         """
         Check the lines for any matches and log the results.
@@ -205,3 +156,53 @@ class SensitiveStringMatcher:
                 matches.append(match)
                 self.log(match.message)
         return matches
+
+    def _search_patterns(
+        self, line: str
+    ) -> dict[re.Pattern | str, tuple[int, int]]:
+        """
+        Search for all configured patterns in the given line.
+
+        Exclude anything that also matches a ``**dont_match`` pattern.
+
+        Args:
+            line:  The line of text to search.
+
+        Returns:
+            A mapping from patterns to their start and end indices in
+            the line of text.
+        """
+        matches: dict[re.Pattern | str, tuple[int, int]] = {}
+        for pattern in self.patterns:
+            if columns := self._search_pattern(line, pattern):
+                line_part = line[columns[0] : columns[1]]
+                if not any(
+                    self._search_pattern(line_part, _)
+                    for _ in self.negative_patterns
+                ):
+                    matches[pattern] = columns
+        return matches
+
+    def _search_pattern(
+        self, line: str, pattern: re.Pattern | str
+    ) -> tuple[int, int] | None:
+        """
+        Search for a single pattern in the given line.
+
+        Args:
+            line:  The line of text to search.
+            pattern:  The pattern for which to search.
+
+        Returns:
+            The start and end indices of the match, or ``None`` if no
+            match is found.
+        """
+        if isinstance(pattern, str):
+            if pattern in line:
+                column_start = line.index(pattern)
+                column_end = column_start + len(pattern)
+                return column_start, column_end
+        elif match := pattern.search(line):
+            return match.span()
+        return None
+

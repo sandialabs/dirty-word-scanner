@@ -31,7 +31,9 @@ class FileFingerprint(aff.AbstractFileFingerprint):
         return delimiter.join([str(value) for value in values])
 
     @classmethod
-    def from_csv_line(cls, data: list[str]) -> tuple["FileFingerprint", list[str]]:
+    def from_csv_line(
+        cls, data: list[str]
+    ) -> tuple["FileFingerprint", list[str]]:
         """Construct an instance of this class from the pre-split csv line 'data'. Also return any leftover portion of the csv line that wasn't used."""
         root, name_ext, size, hash_hex = data[0], data[1], data[2], data[3]
         size = int(size)
@@ -39,7 +41,9 @@ class FileFingerprint(aff.AbstractFileFingerprint):
 
     @classmethod
     def for_file(cls, root_path: str, relative_path: str, file_name_ext: str):
-        norm_path = os.path.normpath(os.path.join(root_path, relative_path, file_name_ext))
+        norm_path = os.path.normpath(
+            os.path.join(root_path, relative_path, file_name_ext)
+        )
         file_size = os.path.getsize(norm_path)
         with open(norm_path, "rb") as fin:
             file_hash = hashlib.sha256(fin.read()).hexdigest()

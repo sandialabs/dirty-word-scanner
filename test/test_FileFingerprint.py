@@ -36,8 +36,12 @@ class test_FileFingerprint(unittest.TestCase):
 
         self._write_text_file(d1, f1, contents)
         self._write_text_file(d2, f2, contents)
-        ff1 = ff.FileFingerprint.for_file(f"{self.out_dir}/{d1}", "", f1 + ".txt")
-        ff2 = ff.FileFingerprint.for_file(f"{self.out_dir}/{d2}", "", f2 + ".txt")
+        ff1 = ff.FileFingerprint.for_file(
+            f"{self.out_dir}/{d1}", "", f1 + ".txt"
+        )
+        ff2 = ff.FileFingerprint.for_file(
+            f"{self.out_dir}/{d2}", "", f2 + ".txt"
+        )
 
         self.assertEqual(ff1, ff2)
 
@@ -64,8 +68,12 @@ class test_FileFingerprint(unittest.TestCase):
 
         self._write_text_file(d1, f1, contents)
         self._write_text_file(d2, f2, contents)
-        ff1 = ff.FileFingerprint.for_file(f"{self.out_dir}/{d1}", "", f1 + ".txt")
-        ff2 = ff.FileFingerprint.for_file(f"{self.out_dir}/{d2}", "", f2 + ".txt")
+        ff1 = ff.FileFingerprint.for_file(
+            f"{self.out_dir}/{d1}", "", f1 + ".txt"
+        )
+        ff2 = ff.FileFingerprint.for_file(
+            f"{self.out_dir}/{d2}", "", f2 + ".txt"
+        )
 
         self.assertNotEqual(ff1, ff2)
 
@@ -80,8 +88,12 @@ class test_FileFingerprint(unittest.TestCase):
 
         self._write_text_file(d1, f1, contents1)
         self._write_text_file(d2, f2, contents2)
-        ff1 = ff.FileFingerprint.for_file(f"{self.out_dir}/{d1}", "", f1 + ".txt")
-        ff2 = ff.FileFingerprint.for_file(f"{self.out_dir}/{d2}", "", f2 + ".txt")
+        ff1 = ff.FileFingerprint.for_file(
+            f"{self.out_dir}/{d1}", "", f1 + ".txt"
+        )
+        ff2 = ff.FileFingerprint.for_file(
+            f"{self.out_dir}/{d2}", "", f2 + ".txt"
+        )
 
         self.assertNotEqual(ff1, ff2)
 

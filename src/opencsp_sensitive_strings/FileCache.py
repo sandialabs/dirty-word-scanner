@@ -32,8 +32,12 @@ class FileCache(aff.AbstractFileFingerprint):
 
     @classmethod
     def for_file(cls, root_path: str, relative_path: str, file_name_ext: str):
-        norm_path = os.path.normpath(os.path.join(root_path, relative_path, file_name_ext))
-        modified_time = datetime.datetime.fromtimestamp(os.stat(norm_path).st_mtime)
+        norm_path = os.path.normpath(
+            os.path.join(root_path, relative_path, file_name_ext)
+        )
+        modified_time = datetime.datetime.fromtimestamp(
+            os.stat(norm_path).st_mtime
+        )
         last_modified = modified_time.strftime("%Y-%m-%d %H:%M:%S")
         return cls(relative_path, file_name_ext, last_modified)
 

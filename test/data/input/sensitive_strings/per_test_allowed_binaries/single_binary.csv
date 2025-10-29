@@ -1,2 +1,2 @@
-relative path,name_ext,size,hash
-c,img1.png,19,37b29d95963d70c6c969272b7b03b9ca4e4a832c86ef059768b15293be74582c
+relative path,size,hash
+c/img1.png,19,37b29d95963d70c6c969272b7b03b9ca4e4a832c86ef059768b15293be74582c

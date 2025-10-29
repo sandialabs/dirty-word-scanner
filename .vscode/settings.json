@@ -1,0 +1,28 @@
+{
+    "python.testing.pytestArgs": [
+        "test"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "cSpell.words": [
+        "apng",
+        "autouse",
+        "coverageac",
+        "foobarbaz",
+        "fromarray",
+        "goobanbaz",
+        "goobarbaz",
+        "googgrbaz",
+        "icns",
+        "iinfo",
+        "imshow",
+        "imwrite",
+        "ipynb",
+        "issubdtype",
+        "mobaxterm",
+        "ndarray",
+        "opencsp",
+        "unfound",
+        "visititems"
+    ]
+}

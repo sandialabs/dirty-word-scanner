@@ -60,5 +60,4 @@ def test_run(
             str(allowed_binaries / f"{allowed_binaries_basename}.csv"),
         ]
     )
-    searcher.git_files_only = False
-    assert searcher.run() == expected
+    assert searcher.run(git_files_only=False) == expected

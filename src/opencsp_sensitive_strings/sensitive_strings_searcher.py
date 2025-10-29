@@ -48,7 +48,6 @@ class SensitiveStringsSearcher:
         self.date_time_str = datetime.now(tz=timezone.utc).strftime(
             "%Y%m%d_%H%M%S"
         )
-        self.git_files_only = True
         self.is_hdf5_searcher = False
         self.matchers: list[SensitiveStringMatcher] = []
         self.matches: dict[Path, list[Match]] = {}
@@ -69,13 +68,13 @@ class SensitiveStringsSearcher:
         """
         self.tmp_dir_base.mkdir(parents=True, exist_ok=True)
 
-    def run(self) -> int:
+    def run(self, *, git_files_only: bool) -> int:
         self.build_matchers()
         self.populate_file_lists()
         files = sorted(
             set(
                 self.get_tracked_files()
-                if self.git_files_only
+                if git_files_only
                 else self.get_files_in_directory()
             )
         )
@@ -467,12 +466,11 @@ class SensitiveStringsSearcher:
             hdf5_searcher.config.remove_unfound_binaries = False
             hdf5_searcher.config.root_search_dir = h5_dir
             hdf5_searcher.date_time_str = self.date_time_str
-            hdf5_searcher.git_files_only = False
             hdf5_searcher.is_hdf5_searcher = True
             hdf5_searcher.tmp_dir_base = self.tmp_dir_base
 
             # Validate all of the unzipped files
-            error = hdf5_searcher.run()
+            error = hdf5_searcher.run(git_files_only=False)
             if error != 0:
                 return self.handle_hdf5_error(
                     hdf5_searcher.matches, hdf5_file.relative_path
@@ -602,7 +600,7 @@ class SensitiveStringsSearcher:
 if __name__ == "__main__":
     searcher = SensitiveStringsSearcher()
     searcher.config.parse_args(sys.argv[1:])
-    num_errors = searcher.run()
+    num_errors = searcher.run(git_files_only=True)
     if num_errors > 0:
         sys.exit(1)
     else:

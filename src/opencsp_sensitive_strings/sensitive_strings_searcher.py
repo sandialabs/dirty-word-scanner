@@ -16,7 +16,6 @@ import numpy as np
 from PIL import UnidentifiedImageError
 from PIL.Image import Image
 from PIL.Image import open as open_image
-from rich.prompt import Confirm
 
 from opencsp_sensitive_strings.config import Config
 from opencsp_sensitive_strings.csv_interface import write_to_csv
@@ -29,6 +28,7 @@ from opencsp_sensitive_strings.sensitive_string_matcher import (
     Match,
     SensitiveStringMatcher,
 )
+from opencsp_sensitive_strings.user_interaction import UserInteraction
 
 logger = logging.getLogger(__name__)
 MAX_WIDTH, MAX_HEIGHT = 1920, 1080
@@ -66,6 +66,7 @@ class SensitiveStringsSearcher:
         Binary files discovered that the tool doesn't know about via
         ``--allowed-binaries``.
         """
+        self.user_interaction = UserInteraction()
         self.tmp_dir_base.mkdir(parents=True, exist_ok=True)
 
     def run(self, *, git_files_only: bool) -> int:
@@ -327,15 +328,15 @@ class SensitiveStringsSearcher:
                 if image := self.get_image_from_fingerprint(binary_file):
                     if not self.config.assume_yes:
                         self.show_image(file, image)
-                    return self.interactive_file_matches(
+                    return self.user_interaction.file_matches(
                         file, "File denied by user"
                     )
-                if self.file_approved_by_user(file):
+                if self.user_interaction.approved(file):
                     return []
             return [Match(0, 0, 0, "", "", "Unknown image file")]
         if file.suffix.lower() == ".h5":
             return self.search_hdf5_file(binary_file)
-        return self.interactive_file_matches(file, "Unknown binary file")
+        return self.user_interaction.file_matches(file, "Unknown binary file")
 
     def get_image_from_fingerprint(
         self, file_fingerprint: FileFingerprint
@@ -366,24 +367,7 @@ class SensitiveStringsSearcher:
         cv2.waitKey(0)
         cv2.destroyAllWindows()
         time.sleep(0.1)  # small delay to prevent accidental double-bounces
-        return self.file_approved_by_user(file)
-
-    def interactive_file_matches(
-        self, file: Path, message: str
-    ) -> list[Match]:
-        return (
-            []
-            if self.file_approved_by_user(file)
-            else [Match(0, 0, 0, "", "", message)]
-        )
-
-    def file_approved_by_user(self, file: Path) -> bool:
-        if self.config.assume_yes:
-            return True
-        return Confirm.ask(
-            f"File:  {file}.  Is this file safe to add?  Does it contain no "
-            "sensitive information?"
-        )
+        return self.user_interaction.approved(file)
 
     def search_hdf5_file(self, hdf5_file: FileFingerprint) -> list[Match]:
         with TemporaryDirectory() as temp_dir:
@@ -460,7 +444,7 @@ class SensitiveStringsSearcher:
 
         # Ask the user about signing off
         if self.config.interactive:
-            if self.file_approved_by_user(self.full_path(relative_path)):
+            if self.user_interaction.approved(self.full_path(relative_path)):
                 return []
             return [Match(0, 0, 0, "", "", "HDF5 file denied by user")]
         matches: list[Match] = []
@@ -544,6 +528,7 @@ class SensitiveStringsSearcher:
 if __name__ == "__main__":
     searcher = SensitiveStringsSearcher()
     searcher.config.parse_args(sys.argv[1:])
+    searcher.user_interaction.assume_yes = searcher.config.assume_yes
     num_errors = searcher.run(git_files_only=True)
     if num_errors > 0:
         sys.exit(1)

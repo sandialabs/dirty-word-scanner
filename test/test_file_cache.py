@@ -10,7 +10,7 @@ from opencsp_sensitive_strings.file_cache import FileCache
 @pytest.fixture(scope="module")
 def output_directory() -> Path:
     result = Path(__file__).parent / "data" / "output" / "FileCache"
-    result.mkdir(exist_ok=True)
+    result.mkdir(exist_ok=True, parents=True)
     return result
 
 

@@ -1,6 +1,7 @@
 """
 Handles converting NumPy arrays to Pillow Images.
 """
+
 import numpy as np
 from PIL.Image import Image, fromarray
 

@@ -1,6 +1,7 @@
 """
 Handles finding sensitive strings in text.
 """
+
 from __future__ import annotations
 
 import dataclasses

@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from src.opencsp_sensitive_strings.sensitive_strings import (
+from opencsp_sensitive_strings.sensitive_strings_searcher import (
     SensitiveStringsSearcher,
 )
 
@@ -17,7 +17,8 @@ def mock_sensitive_strings_searcher() -> Generator[None, None, None]:
         lambda _: None,
     )
     patcher_copyfile = patch(
-        "src.opencsp_sensitive_strings.sensitive_strings.shutil.copyfile",
+        "src.opencsp_sensitive_strings.sensitive_strings_searcher.shutil."
+        "copyfile",
         lambda *_args, **_kwargs: None,
     )
     patcher_update_allowed_binaries_csv.start()
@@ -40,7 +41,7 @@ def mock_sensitive_strings_searcher() -> Generator[None, None, None]:
         ("no_matches", "single_expected_not_found_binary", 3),
     ],
 )
-def test_search_files(
+def test_run(
     sensitive_strings_basename: str,
     allowed_binaries_basename: str,
     expected: int,
@@ -48,10 +49,16 @@ def test_search_files(
     data = Path(__file__).parent / "data" / "input" / "sensitive_strings"
     sensitive_strings = data / "per_test_sensitive_strings"
     allowed_binaries = data / "per_test_allowed_binaries"
-    searcher = SensitiveStringsSearcher(
-        data / "root_search_dir",
-        sensitive_strings / f"{sensitive_strings_basename}.csv",
-        allowed_binaries / f"{allowed_binaries_basename}.csv",
+    searcher = SensitiveStringsSearcher()
+    searcher.parse_args(
+        [
+            "--root-search-dir",
+            str(data / "root_search_dir"),
+            "--sensitive-strings",
+            str(sensitive_strings / f"{sensitive_strings_basename}.csv"),
+            "--allowed-binaries",
+            str(allowed_binaries / f"{allowed_binaries_basename}.csv"),
+        ]
     )
     searcher.git_files_only = False
-    assert searcher.search_files() == expected
+    assert searcher.run() == expected

@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "Jason M. Gates", email = "jmgate@sandia.gov" }
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "h5py>=3.14.0",
     "numpy>=2.0.2",

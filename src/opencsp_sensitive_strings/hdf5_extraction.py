@@ -1,8 +1,10 @@
 """
 Handles extracting the contents of HDF5 files.
 """
+
+from __future__ import annotations
+
 from pathlib import Path
-from typing import Optional, Union
 
 import h5py
 import numpy as np
@@ -36,7 +38,7 @@ def _get_datasets(hdf5_file: Path) -> list[Path]:
 
 def _get_scalar_value(
     data: h5py.Dataset,
-) -> Union[str, float, int, np.bytes_, bytes]:
+) -> str | float | np.bytes_ | bytes:
     """
     Retrieve the scalar value from the dataset.
 
@@ -51,7 +53,7 @@ def _get_scalar_value(
 
 def _get_single_element_value(
     data: h5py.Dataset,
-) -> Union[str, float, int, np.bytes_, bytes]:
+) -> str | float | np.bytes_ | bytes:
     """
     Flatten the dataset and return the first element.
 
@@ -79,8 +81,8 @@ def _get_non_empty_array(data: h5py.Dataset) -> np.ndarray:
 
 
 def _decode_if_bytes(
-    value: Optional[Union[str, float, int, np.bytes_, bytes, np.ndarray]],
-) -> Optional[Union[str, float, int, np.ndarray]]:
+    value: str | float | np.bytes_ | bytes | np.ndarray | None,
+) -> str | float | np.ndarray | None:
     """
     Decode byte data to string if necessary.
 
@@ -96,7 +98,7 @@ def _decode_if_bytes(
 
 def _load_dataset_from_file(
     dataset: Path, file: Path
-) -> Optional[Union[str, float, int, np.ndarray]]:
+) -> str | float | np.ndarray | None:
     """
     Load the requested dataset from a HDF5 file.
 
@@ -124,7 +126,7 @@ def _load_dataset_from_file(
 
 
 def _extract_string(
-    value: Optional[Union[str, float, int, np.ndarray]],
+    value: str | float | np.ndarray | None,
     dataset: Path,
 ) -> bool:
     """
@@ -146,7 +148,7 @@ def _extract_string(
 
 
 def _extract_images(
-    value: Optional[Union[str, float, int, np.ndarray]],
+    value: str | float | np.ndarray | None,
     dataset: Path,
 ) -> bool:
     """
@@ -191,7 +193,7 @@ def _extract_images(
 
 
 def _extract_other_dataset(
-    value: Optional[Union[str, float, int, np.ndarray]],
+    value: str | float | np.ndarray | None,
     dataset: Path,
 ) -> bool:
     """

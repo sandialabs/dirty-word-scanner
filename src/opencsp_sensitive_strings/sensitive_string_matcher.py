@@ -6,7 +6,6 @@ from __future__ import annotations
 import dataclasses
 import logging
 import re
-from typing import Optional, Union
 
 logger = logging.getLogger(__name__)
 
@@ -40,9 +39,9 @@ class SensitiveStringMatcher:
 
     Attributes:
         name (str):  The name of the matcher.
-        patterns (list[Union[re.Pattern, str]]):  The patterns to match
+        patterns (list[re.Pattern | str]):  The patterns to match
             against.
-        negative_patterns (list[Union[re.Pattern, str]]):  Patterns that
+        negative_patterns (list[re.Pattern | str]):  Patterns that
             should not match.
         log (callable):  The logging function to use for messages.
         case_sensitive (bool):  Flag indicating whether matching should
@@ -58,8 +57,8 @@ class SensitiveStringMatcher:
             patterns:  A variable number of patterns to process.
         """
         self.name = name
-        self.patterns: list[Union[re.Pattern, str]] = []
-        self.negative_patterns: list[Union[re.Pattern, str]] = []
+        self.patterns: list[re.Pattern | str] = []
+        self.negative_patterns: list[re.Pattern | str] = []
         self.log = logging.debug
         self.case_sensitive = False
         self._process_patterns(patterns)
@@ -124,8 +123,8 @@ class SensitiveStringMatcher:
         ]
 
     def _search_pattern(
-        self, line: str, pattern: Union[re.Pattern, str]
-    ) -> Optional[tuple[int, int]]:
+        self, line: str, pattern: re.Pattern | str
+    ) -> tuple[int, int] | None:
         """
         Search for a single pattern in the given line.
 
@@ -148,7 +147,7 @@ class SensitiveStringMatcher:
 
     def _search_patterns(
         self, line: str
-    ) -> dict[Union[re.Pattern, str], tuple[int, int]]:
+    ) -> dict[re.Pattern | str, tuple[int, int]]:
         """
         Search for all configured patterns in the given line.
 
@@ -161,7 +160,7 @@ class SensitiveStringMatcher:
             A mapping from patterns to their start and end indices in
             the line of text.
         """
-        matches: dict[Union[re.Pattern, str], tuple[int, int]] = {}
+        matches: dict[re.Pattern | str, tuple[int, int]] = {}
         for pattern in self.patterns:
             if columns := self._search_pattern(line, pattern):
                 line_part = line[columns[0] : columns[1]]

@@ -14,7 +14,6 @@ import time
 from contextlib import suppress
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
 
 import cv2
 import numpy as np
@@ -74,7 +73,7 @@ class SensitiveStringsSearcher:
         root_search_dir: Path,
         sensitive_strings_csv: Path,
         allowed_binary_files_csv: Path,
-        cache_file_csv: Optional[Path] = None,
+        cache_file_csv: Path | None = None,
     ) -> None:
         self.root_search_dir = root_search_dir
         self.sensitive_strings_csv = sensitive_strings_csv
@@ -326,8 +325,8 @@ class SensitiveStringsSearcher:
     def verify_interactively(
         self,
         file: Path,
-        cv_img: Optional[Image] = None,
-        cv_title: Optional[str] = None,
+        cv_img: Image | None = None,
+        cv_title: str | None = None,
     ) -> bool:
         if cv_img is None:
             logger.info("")
@@ -399,8 +398,8 @@ class SensitiveStringsSearcher:
     def interactive_image_sign_off(
         self,
         description: Path,
-        np_image: Optional[np.ndarray] = None,
-        file_ff: Optional[FileFingerprint] = None,
+        np_image: np.ndarray | None = None,
+        file_ff: FileFingerprint | None = None,
     ) -> bool:
         if (np_image is None) and (file_ff is not None):
             file_norm_path = self.norm_path(file_ff.relative_path)

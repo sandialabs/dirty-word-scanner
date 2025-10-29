@@ -315,17 +315,20 @@ class SensitiveStringsSearcher:
     def search_binary_file(self, binary_file: FileFingerprint) -> list[Match]:
         file = self.full_path(binary_file.relative_path)
         if is_image(file):
-            if self.config.interactive:
-                if image := get_image(file):
-                    if not user.assume_yes:
-                        show_image(file, image)
-                    return user.file_matches(file, "File denied by user")
-                if user.approved(file):
-                    return []
-            return [Match(0, 0, 0, "", "", "Unknown image file")]
+            return self.search_image_file(file)
         if file.suffix.lower() == ".h5":
             return self.search_hdf5_file(binary_file)
         return user.file_matches(file, "Unknown binary file")
+
+    def search_image_file(self, file: Path) -> list[Match]:
+        if self.config.interactive:
+            if image := get_image(file):
+                if not user.assume_yes:
+                    show_image(file, image)
+                return user.file_matches(file, "File denied by user")
+            if user.approved(file):
+                return []
+        return [Match(0, 0, 0, "", "", "Unknown image file")]
 
     def search_hdf5_file(self, hdf5_file: FileFingerprint) -> list[Match]:
         with TemporaryDirectory() as temp_dir:

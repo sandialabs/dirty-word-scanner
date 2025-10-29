@@ -3,7 +3,6 @@ from __future__ import annotations
 import csv
 import logging
 import shutil
-import subprocess
 import sys
 import time
 from contextlib import suppress
@@ -22,6 +21,7 @@ from rich.prompt import Confirm
 from opencsp_sensitive_strings.config import Config
 from opencsp_sensitive_strings.csv_interface import write_to_csv
 from opencsp_sensitive_strings.file_cache import FileCache
+from opencsp_sensitive_strings.file_finder import FileFinder
 from opencsp_sensitive_strings.file_fingerprint import FileFingerprint
 from opencsp_sensitive_strings.hdf5_extraction import extract_hdf5_to_directory
 from opencsp_sensitive_strings.image import is_image, numpy_to_image
@@ -71,14 +71,7 @@ class SensitiveStringsSearcher:
     def run(self, *, git_files_only: bool) -> int:
         self.build_matchers()
         self.populate_file_lists()
-        files = sorted(
-            set(
-                self.get_tracked_files()
-                if git_files_only
-                else self.get_files_in_directory()
-            )
-        )
-        self.process_files(files)
+        self.process_files(git_files_only=git_files_only)
         self.print_match_information()
         self.process_unknown_binary_files()
         self.ensure_no_binaries_in_cache()
@@ -120,59 +113,7 @@ class SensitiveStringsSearcher:
                 self.cached_cleared_files.clear()
         self.new_cached_cleared_files.append(sensitive_strings_cache)
 
-    def get_tracked_files(self) -> list[Path]:
-        files: list[Path] = []
-        git = self.get_git_command()
-        for command in [
-            [git, "ls-tree", "--full-tree", "--name-only", "-r", "HEAD"],
-            [git, "diff", "--name-only", "--cached", "--diff-filter=A"],
-        ]:
-            completed_process = subprocess.run(  # noqa: S603
-                command,
-                check=True,
-                cwd=self.config.root_search_dir,
-                stdout=subprocess.PIPE,
-                text=True,
-            )
-            files.extend(
-                Path(file)
-                for file in completed_process.stdout.splitlines()
-                if (self.config.root_search_dir / file).is_file()
-            )
-        logger.info(
-            "Searching for sensitive strings in %d tracked files", len(files)
-        )
-        return files
-
-    @staticmethod
-    def get_git_command() -> str:
-        """
-        Determine the git command to use for getting tracked files.
-
-        Note:
-            If this script is evaluated from MobaXTerm, then the
-            built-in 16-bit version of git will fail.
-
-        Returns:
-            The git executable.
-        """
-        if (git := shutil.which("git")) is None:
-            message = "'git' executable not found."
-            raise RuntimeError(message)
-        if "mobaxterm" in git:
-            git = "git"
-        return git
-
-    def get_files_in_directory(self) -> list[Path]:
-        files = [
-            file.relative_to(self.config.root_search_dir)
-            for file in self.config.root_search_dir.rglob("*")
-            if file.is_file()
-        ]
-        logger.info("Searching for sensitive strings in %d files", len(files))
-        return files
-
-    def process_files(self, files: list[Path]) -> None:
+    def process_files(self, *, git_files_only: bool) -> None:
         """
         Search for sensitive strings in files.
 
@@ -181,7 +122,10 @@ class SensitiveStringsSearcher:
         Args:
             files:  The files in which to search.
         """
-        for file in files:
+        file_finder = FileFinder(
+            self.config.root_search_dir, logger, git_files_only=git_files_only
+        )
+        for file in file_finder.get_files_to_process():
             logger.debug("Searching file %s", file)
             cache_entry = FileCache.for_file(self.config.root_search_dir, file)
             if cache_entry in self.cached_cleared_files:

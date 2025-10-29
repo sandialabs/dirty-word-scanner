@@ -50,7 +50,7 @@ def test_run(
     sensitive_strings = data / "per_test_sensitive_strings"
     allowed_binaries = data / "per_test_allowed_binaries"
     searcher = SensitiveStringsSearcher()
-    searcher.parse_args(
+    searcher.config.parse_args(
         [
             "--root-search-dir",
             str(data / "root_search_dir"),

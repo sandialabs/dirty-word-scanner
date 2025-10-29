@@ -6,12 +6,10 @@ import shutil
 import subprocess
 import sys
 import time
-from argparse import ArgumentParser, BooleanOptionalAction
 from contextlib import suppress
 from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory, gettempdir
-from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 import cv2
@@ -21,6 +19,7 @@ from PIL.Image import Image
 from PIL.Image import open as open_image
 from rich.prompt import Confirm
 
+from opencsp_sensitive_strings.config import Config
 from opencsp_sensitive_strings.csv_interface import write_to_csv
 from opencsp_sensitive_strings.file_cache import FileCache
 from opencsp_sensitive_strings.file_fingerprint import FileFingerprint
@@ -30,9 +29,6 @@ from opencsp_sensitive_strings.sensitive_string_matcher import (
     Match,
     SensitiveStringMatcher,
 )
-
-if TYPE_CHECKING:
-    from collections.abc import Mapping
 
 logger = logging.getLogger(__name__)
 MAX_WIDTH, MAX_HEIGHT = 1920, 1080
@@ -47,14 +43,12 @@ class SensitiveStringsSearcher:
     def __init__(self) -> None:
         self.accepted_binary_files: list[FileFingerprint] = []
         self.allowed_binary_files: list[FileFingerprint] = []
-        self.allowed_binary_files_csv = Path("allowed_binaries.csv")
-        self.cache_file_csv: Path | None = None
         self.cached_cleared_files: list[FileCache] = []
+        self.config = Config()
         self.date_time_str = datetime.now(tz=timezone.utc).strftime(
             "%Y%m%d_%H%M%S"
         )
         self.git_files_only = True
-        self.interactive = False
         self.is_hdf5_searcher = False
         self.matchers: list[SensitiveStringMatcher] = []
         self.matches: dict[Path, list[Match]] = {}
@@ -62,9 +56,6 @@ class SensitiveStringsSearcher:
         A mapping from files to the sensitive string matches found therein.
         """
         self.new_cached_cleared_files: list[FileCache] = []
-        self.remove_unfound_binaries = False
-        self.root_search_dir = Path.cwd()
-        self.sensitive_strings_csv = Path("sensitive_strings.csv")
         self.tmp_dir_base = Path(gettempdir()) / "SensitiveStringSearcher"
         self.unfound_allowed_binary_files: list[FileFingerprint] = []
         """
@@ -76,146 +67,7 @@ class SensitiveStringsSearcher:
         Binary files discovered that the tool doesn't know about via
         ``--allowed-binaries``.
         """
-        self.assume_yes = False
         self.tmp_dir_base.mkdir(parents=True, exist_ok=True)
-
-    def parser(self) -> ArgumentParser:
-        """
-        Create the argument parser for the script.
-
-        Returns:
-            The argument parser.
-        """
-        argument_parser = ArgumentParser(
-            prog=__file__.rstrip(".py"),
-            description="Sensitive strings searcher",
-        )
-        argument_parser.add_argument(
-            "--root-search-dir",
-            help="The directory in which to search for sensitive strings.",
-            required=True,
-            type=Path,
-        )
-        argument_parser.add_argument(
-            "--sensitive-strings",
-            help="The CSV file defining the sensitive string patterns to "
-            "search for.",
-            required=True,
-            type=Path,
-        )
-        argument_parser.add_argument(
-            "--allowed-binaries",
-            help="The CSV file defining the allowed binary files.",
-            required=True,
-            type=Path,
-        )
-        argument_parser.add_argument(
-            "--interactive",
-            action=BooleanOptionalAction,
-            help="Whether to interactively ask the user about unknown binary "
-            "files.",
-        )
-        argument_parser.add_argument(
-            "--assume-yes",
-            action="store_true",
-            help="Don't interactively ask the user about unknown binary "
-            "files.  Simply accept all as verified on the user's behalf.  "
-            "This can be useful when you're confident that the only changes "
-            "have been that the binary files have moved but not changed.",
-        )
-        argument_parser.add_argument(
-            "--accept-unfound",
-            action="store_true",
-            help="Don't fail because of unfound expected binary files.  "
-            "Instead remove the expected files from the list of allowed "
-            "binaries.  This can be useful when you're confident that the "
-            "only changes have been that the binary files have moved but not "
-            "changed.",
-        )
-        argument_parser.add_argument(
-            "--log-dir",
-            default=Path(gettempdir()) / "sensitive_strings",
-            help="The directory in which to store all logs.",
-            type=Path,
-        )
-        argument_parser.add_argument(
-            "--cache-file",
-            default=None,
-            help="The directory in which to store all logs.",
-            type=Path,
-        )
-        argument_parser.add_argument(
-            "--verbose",
-            action="store_true",
-            help="Print more information while running",
-        )
-        return argument_parser
-
-    def parse_args(self, argv: list[str]) -> None:
-        """
-        Parse the command line arguments to the script.
-
-        To finish initializing the object.
-
-        Args:
-            argv:  The command line arguments to parse.
-        """
-        args = self.parser().parse_args(argv)
-        self.allowed_binary_files_csv = Path(args.allowed_binaries)
-        self.assume_yes = bool(args.assume_yes)
-        self.cache_file_csv = (
-            Path(args.cache_file) if args.cache_file else None
-        )
-        self.interactive = bool(args.interactive or args.assume_yes)
-        self.remove_unfound_binaries = bool(args.accept_unfound)
-        self.root_search_dir = Path(args.root_search_dir)
-        self.sensitive_strings_csv = Path(args.sensitive_strings)
-        log_path: Path = args.log_dir / "sensitive_strings.log"
-        logging.basicConfig(
-            filename=log_path,
-            level=(logging.DEBUG if args.verbose else logging.INFO),
-        )
-
-    @classmethod
-    def clone(
-        cls,
-        other: SensitiveStringsSearcher,
-        overrides: Mapping[str, Any] | None = None,
-    ) -> SensitiveStringsSearcher:
-        """
-        Create a clone from a subset of another's attributes.
-
-        Create a :class:`SensitiveStringsSearcher` from scratch, and
-        then copy over the following attribute values:
-
-        * allowed_binary_files_csv
-        * date_time_str
-        * interactive
-        * root_search_dir
-        * sensitive_strings_csv
-        * tmp_dir_base
-        * verify_all_on_behalf_of_user
-
-        Optionally override any attributes, either from the
-        initialization, or from the clone.
-
-        Args:
-            other:  The object to clone from.
-            overrides:  Any attributes to override.
-        """
-        searcher = SensitiveStringsSearcher()
-        searcher.allowed_binary_files_csv = other.allowed_binary_files_csv
-        searcher.date_time_str = other.date_time_str
-        searcher.interactive = other.interactive
-        searcher.root_search_dir = other.root_search_dir
-        searcher.sensitive_strings_csv = other.sensitive_strings_csv
-        searcher.tmp_dir_base = other.tmp_dir_base
-        searcher.assume_yes = other.assume_yes
-        if overrides:
-            for attribute, value in overrides.items():
-                if hasattr(searcher, attribute):
-                    setattr(searcher, attribute, value)
-        return searcher
 
     def run(self) -> int:
         self.build_matchers()
@@ -238,7 +90,7 @@ class SensitiveStringsSearcher:
         """
         Build matchers from the sensitive strings CSV file.
         """
-        with self.sensitive_strings_csv.open(newline="") as csv_file:
+        with self.config.sensitive_strings_csv.open(newline="") as csv_file:
             reader = csv.reader(csv_file)
             next(reader)
             self.matchers = [
@@ -252,17 +104,18 @@ class SensitiveStringsSearcher:
             self.allowed_binary_files = [
                 file
                 for file, _ in FileFingerprint.from_csv(
-                    self.allowed_binary_files_csv
+                    self.config.allowed_binary_files_csv
                 )
             ]
         self.unfound_allowed_binary_files = self.allowed_binary_files.copy()
         sensitive_strings_cache = FileCache.for_file(
-            self.sensitive_strings_csv.parent,
-            Path(self.sensitive_strings_csv.name),
+            self.config.sensitive_strings_csv.parent,
+            Path(self.config.sensitive_strings_csv.name),
         )
-        if self.cache_file_csv and self.cache_file_csv.is_file():
+        if self.config.cache_file_csv and self.config.cache_file_csv.is_file():
             self.cached_cleared_files = [
-                file for file, _ in FileCache.from_csv(self.cache_file_csv)
+                file
+                for file, _ in FileCache.from_csv(self.config.cache_file_csv)
             ]
             if sensitive_strings_cache not in self.cached_cleared_files:
                 self.cached_cleared_files.clear()
@@ -278,14 +131,14 @@ class SensitiveStringsSearcher:
             completed_process = subprocess.run(  # noqa: S603
                 command,
                 check=True,
-                cwd=self.root_search_dir,
+                cwd=self.config.root_search_dir,
                 stdout=subprocess.PIPE,
                 text=True,
             )
             files.extend(
                 Path(file)
                 for file in completed_process.stdout.splitlines()
-                if (self.root_search_dir / file).is_file()
+                if (self.config.root_search_dir / file).is_file()
             )
         logger.info(
             "Searching for sensitive strings in %d tracked files", len(files)
@@ -313,8 +166,8 @@ class SensitiveStringsSearcher:
 
     def get_files_in_directory(self) -> list[Path]:
         files = [
-            file.relative_to(self.root_search_dir)
-            for file in self.root_search_dir.rglob("*")
+            file.relative_to(self.config.root_search_dir)
+            for file in self.config.root_search_dir.rglob("*")
             if file.is_file()
         ]
         logger.info("Searching for sensitive strings in %d files", len(files))
@@ -331,7 +184,7 @@ class SensitiveStringsSearcher:
         """
         for file in files:
             logger.debug("Searching file %s", file)
-            cache_entry = FileCache.for_file(self.root_search_dir, file)
+            cache_entry = FileCache.for_file(self.config.root_search_dir, file)
             if cache_entry in self.cached_cleared_files:
                 self.new_cached_cleared_files.append(cache_entry)
             elif self.is_binary(file):
@@ -340,7 +193,10 @@ class SensitiveStringsSearcher:
                 self.matches[file] = file_matches
             else:
                 self.new_cached_cleared_files.append(cache_entry)
-        if self.unfound_allowed_binary_files and self.remove_unfound_binaries:
+        if (
+            self.unfound_allowed_binary_files
+            and self.config.remove_unfound_binaries
+        ):
             self.remove_unfound_binary_files()
 
     def is_binary(self, file: Path) -> bool:
@@ -383,7 +239,7 @@ class SensitiveStringsSearcher:
         Returns:
             The absolute path to the file.
         """
-        return (self.root_search_dir / relative_path).resolve()
+        return (self.config.root_search_dir / relative_path).resolve()
 
     def save_binary_for_later_processing(self, file: Path) -> None:
         """
@@ -398,7 +254,9 @@ class SensitiveStringsSearcher:
         Args:
             file:  The binary file in question.
         """
-        fingerprint = FileFingerprint.for_file(self.root_search_dir, file)
+        fingerprint = FileFingerprint.for_file(
+            self.config.root_search_dir, file
+        )
         if fingerprint in self.allowed_binary_files:
             with suppress(ValueError):
                 self.unfound_allowed_binary_files.remove(fingerprint)
@@ -443,18 +301,20 @@ class SensitiveStringsSearcher:
         """Overwrite the allowed binaries CSV file with the current list."""
         self.create_backup_allowed_binaries_csv()
         self.allowed_binary_files = sorted(self.allowed_binary_files)
-        write_to_csv(self.allowed_binary_files_csv, self.allowed_binary_files)
+        write_to_csv(
+            self.config.allowed_binary_files_csv, self.allowed_binary_files
+        )
 
     def create_backup_allowed_binaries_csv(self) -> None:
         """Create a backup of the allowed binaries CSV file."""
-        file = self.allowed_binary_files_csv
+        file = self.config.allowed_binary_files_csv
         backup = (
             file.parent
             / f"{file.stem}_backup_{self.date_time_str}{file.suffix}"
         )
         if backup.is_file():
             backup.unlink()
-        shutil.copyfile(self.allowed_binary_files_csv, backup)
+        shutil.copyfile(self.config.allowed_binary_files_csv, backup)
 
     def print_match_information(self) -> None:
         """
@@ -520,9 +380,9 @@ class SensitiveStringsSearcher:
     def search_binary_file(self, binary_file: FileFingerprint) -> list[Match]:
         file = self.full_path(binary_file.relative_path)
         if is_image(file):
-            if self.interactive:
+            if self.config.interactive:
                 if image := self.get_image_from_fingerprint(binary_file):
-                    if not self.assume_yes:
+                    if not self.config.assume_yes:
                         self.show_image(file, image)
                     return self.interactive_file_matches(
                         file, "File denied by user"
@@ -575,7 +435,7 @@ class SensitiveStringsSearcher:
         )
 
     def file_approved_by_user(self, file: Path) -> bool:
-        if self.assume_yes:
+        if self.config.assume_yes:
             return True
         return Confirm.ask(
             f"File:  {file}.  Is this file safe to add?  Does it contain no "
@@ -594,19 +454,22 @@ class SensitiveStringsSearcher:
             tmp_allowed_binary_csv = self.tmp_dir_base / f"{uuid4()}.csv"
             tmp_allowed_binary_csv.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(
-                self.allowed_binary_files_csv, tmp_allowed_binary_csv
+                self.config.allowed_binary_files_csv, tmp_allowed_binary_csv
             )
 
             # Create a searcher for the unzipped directory
-            hdf5_searcher = SensitiveStringsSearcher.clone(
-                self,
-                overrides={
-                    "root_search_dir": h5_dir,
-                    "allowed_binary_files_csv": tmp_allowed_binary_csv,
-                    "git_files_only": False,
-                    "is_hdf5_searcher": True,
-                },
+            hdf5_searcher = SensitiveStringsSearcher()
+            hdf5_searcher.config = self.config
+            hdf5_searcher.config.allowed_binary_files_csv = (
+                tmp_allowed_binary_csv
             )
+            hdf5_searcher.config.cache_file_csv = None
+            hdf5_searcher.config.remove_unfound_binaries = False
+            hdf5_searcher.config.root_search_dir = h5_dir
+            hdf5_searcher.date_time_str = self.date_time_str
+            hdf5_searcher.git_files_only = False
+            hdf5_searcher.is_hdf5_searcher = True
+            hdf5_searcher.tmp_dir_base = self.tmp_dir_base
 
             # Validate all of the unzipped files
             error = hdf5_searcher.run()
@@ -654,7 +517,7 @@ class SensitiveStringsSearcher:
         )
 
         # Ask the user about signing off
-        if self.interactive:
+        if self.config.interactive:
             if self.file_approved_by_user(self.full_path(relative_path)):
                 return []
             return [Match(0, 0, 0, "", "", "HDF5 file denied by user")]
@@ -690,10 +553,12 @@ class SensitiveStringsSearcher:
                 if file.relative_path == file_fingerprint.relative_path:
                     self.new_cached_cleared_files.remove(file)
                     break
-        if self.cache_file_csv and self.new_cached_cleared_files:
-            self.cache_file_csv.parent.mkdir(parents=True, exist_ok=True)
+        if self.config.cache_file_csv and self.new_cached_cleared_files:
+            self.config.cache_file_csv.parent.mkdir(
+                parents=True, exist_ok=True
+            )
             write_to_csv(
-                self.cache_file_csv,
+                self.config.cache_file_csv,
                 self.new_cached_cleared_files,
             )
 
@@ -736,7 +601,7 @@ class SensitiveStringsSearcher:
 
 if __name__ == "__main__":
     searcher = SensitiveStringsSearcher()
-    searcher.parse_args(sys.argv[1:])
+    searcher.config.parse_args(sys.argv[1:])
     num_errors = searcher.run()
     if num_errors > 0:
         sys.exit(1)

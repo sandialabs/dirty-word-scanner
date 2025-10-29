@@ -205,4 +205,3 @@ class SensitiveStringMatcher:
         elif match := pattern.search(line):
             return match.span()
         return None
-

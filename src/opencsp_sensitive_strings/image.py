@@ -2,12 +2,24 @@
 Handles converting NumPy arrays to Pillow Images.
 """
 
-from pathlib import Path
+from __future__ import annotations
 
+import time
+from typing import TYPE_CHECKING
+
+import cv2
 import numpy as np
+from PIL import UnidentifiedImageError
 from PIL.Image import Image, fromarray
+from PIL.Image import open as open_image
+
+from opencsp_sensitive_strings.user_interaction import user
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 EIGHT_BIT_DEPTH = 255
+MAX_WIDTH, MAX_HEIGHT = 1920, 1080
 
 
 def is_image(file: Path) -> bool:
@@ -101,3 +113,33 @@ def numpy_to_image(array: np.ndarray, *, rescale: bool = True) -> Image:
         array = np.clip(array, 0, 255)
         array = array.astype(np.uint8)
     return fromarray(array)
+
+
+def get_image(file: Path) -> Image | None:
+    try:
+        with open_image(file) as contents:
+            np_image = np.array(contents.convert("RGB")).copy()
+    except (
+        FileNotFoundError,
+        UnidentifiedImageError,
+        ValueError,
+        TypeError,
+    ):
+        return None
+    else:
+        return numpy_to_image(np_image)
+
+
+def show_image(file: Path, image: Image) -> bool:
+    rescaled = ""
+    if image.size[0] > MAX_WIDTH or image.size[1] > MAX_HEIGHT:
+        scale = min(MAX_WIDTH / image.size[0], MAX_HEIGHT / image.size[1])
+        image = image.resize(
+            (int(scale * image.size[0]), int(scale * image.size[1]))
+        )
+        rescaled = " (downscaled)"
+    cv2.imshow(f"{file}{rescaled}", np.array(image))
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    time.sleep(0.1)  # small delay to prevent accidental double-bounces
+    return user.approved(file)

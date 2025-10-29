@@ -6,8 +6,9 @@ from opencsp_sensitive_strings.sensitive_string_matcher import Match
 
 
 class UserInteraction:
-    def __init__(self, *, assume_yes: bool = False) -> None:
-        self.assume_yes = assume_yes
+    def __init__(self) -> None:
+        self.assume_yes = False
+        """Whether to assume 'yes' for any prompts to the user."""
 
     def file_matches(self, file: Path, message: str) -> list[Match]:
         return [] if self.approved(file) else [Match(0, 0, 0, "", "", message)]
@@ -19,3 +20,7 @@ class UserInteraction:
             f"File:  {file}.  Is this file safe to add?  Does it contain no "
             "sensitive information?"
         )
+
+
+user = UserInteraction()
+"""A single :class:`UserInteraction` instance to be used across all files."""

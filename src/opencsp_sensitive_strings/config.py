@@ -3,6 +3,8 @@ from argparse import ArgumentParser, BooleanOptionalAction
 from pathlib import Path
 from tempfile import gettempdir
 
+from opencsp_sensitive_strings.user_interaction import user
+
 
 class Config:
     """The configuration for the :class:`SensitiveStringsSearcher`."""
@@ -15,8 +17,6 @@ class Config:
         These are automatically considered to be contain no sensitive
         information.
         """
-        self.assume_yes = False
-        """Whether to assume 'yes' for any prompts to the user."""
         self.cache_file_csv: Path | None = None
         """
         An optional CSV file containing cached cleared files.
@@ -137,7 +137,6 @@ class Config:
         """
         args = self._parser().parse_args(argv)
         self.allowed_binary_files_csv = Path(args.allowed_binaries)
-        self.assume_yes = bool(args.assume_yes)
         self.cache_file_csv = (
             Path(args.cache_file) if args.cache_file else None
         )
@@ -145,6 +144,7 @@ class Config:
         self.remove_unfound_binaries = bool(args.accept_unfound)
         self.root_search_dir = Path(args.root_search_dir)
         self.sensitive_strings_csv = Path(args.sensitive_strings)
+        user.assume_yes = bool(args.assume_yes)
         log_path: Path = args.log_dir / "sensitive_strings.log"
         logging.basicConfig(
             filename=log_path,

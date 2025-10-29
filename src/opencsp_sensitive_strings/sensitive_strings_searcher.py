@@ -4,18 +4,11 @@ import csv
 import logging
 import shutil
 import sys
-import time
 from contextlib import suppress
 from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory, gettempdir
 from uuid import uuid4
-
-import cv2
-import numpy as np
-from PIL import UnidentifiedImageError
-from PIL.Image import Image
-from PIL.Image import open as open_image
 
 from opencsp_sensitive_strings.config import Config
 from opencsp_sensitive_strings.csv_interface import write_to_csv
@@ -23,15 +16,14 @@ from opencsp_sensitive_strings.file_cache import FileCache
 from opencsp_sensitive_strings.file_finder import FileFinder
 from opencsp_sensitive_strings.file_fingerprint import FileFingerprint
 from opencsp_sensitive_strings.hdf5_extraction import extract_hdf5_to_directory
-from opencsp_sensitive_strings.image import is_image, numpy_to_image
+from opencsp_sensitive_strings.image import get_image, is_image, show_image
 from opencsp_sensitive_strings.sensitive_string_matcher import (
     Match,
     SensitiveStringMatcher,
 )
-from opencsp_sensitive_strings.user_interaction import UserInteraction
+from opencsp_sensitive_strings.user_interaction import user
 
 logger = logging.getLogger(__name__)
-MAX_WIDTH, MAX_HEIGHT = 1920, 1080
 MAX_FILE_SIZE = 1e6
 
 
@@ -66,7 +58,6 @@ class SensitiveStringsSearcher:
         Binary files discovered that the tool doesn't know about via
         ``--allowed-binaries``.
         """
-        self.user_interaction = UserInteraction()
         self.tmp_dir_base.mkdir(parents=True, exist_ok=True)
 
     def run(self, *, git_files_only: bool) -> int:
@@ -325,49 +316,16 @@ class SensitiveStringsSearcher:
         file = self.full_path(binary_file.relative_path)
         if is_image(file):
             if self.config.interactive:
-                if image := self.get_image_from_fingerprint(binary_file):
-                    if not self.config.assume_yes:
-                        self.show_image(file, image)
-                    return self.user_interaction.file_matches(
-                        file, "File denied by user"
-                    )
-                if self.user_interaction.approved(file):
+                if image := get_image(file):
+                    if not user.assume_yes:
+                        show_image(file, image)
+                    return user.file_matches(file, "File denied by user")
+                if user.approved(file):
                     return []
             return [Match(0, 0, 0, "", "", "Unknown image file")]
         if file.suffix.lower() == ".h5":
             return self.search_hdf5_file(binary_file)
-        return self.user_interaction.file_matches(file, "Unknown binary file")
-
-    def get_image_from_fingerprint(
-        self, file_fingerprint: FileFingerprint
-    ) -> Image | None:
-        file = self.full_path(file_fingerprint.relative_path)
-        try:
-            with open_image(file) as contents:
-                np_image = np.array(contents.convert("RGB")).copy()
-        except (
-            FileNotFoundError,
-            UnidentifiedImageError,
-            ValueError,
-            TypeError,
-        ):
-            return None
-        else:
-            return numpy_to_image(np_image)
-
-    def show_image(self, file: Path, image: Image) -> bool:
-        rescaled = ""
-        if image.size[0] > MAX_WIDTH or image.size[1] > MAX_HEIGHT:
-            scale = min(MAX_WIDTH / image.size[0], MAX_HEIGHT / image.size[1])
-            image = image.resize(
-                (int(scale * image.size[0]), int(scale * image.size[1]))
-            )
-            rescaled = " (downscaled)"
-        cv2.imshow(f"{file}{rescaled}", np.array(image))
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-        time.sleep(0.1)  # small delay to prevent accidental double-bounces
-        return self.user_interaction.approved(file)
+        return user.file_matches(file, "Unknown binary file")
 
     def search_hdf5_file(self, hdf5_file: FileFingerprint) -> list[Match]:
         with TemporaryDirectory() as temp_dir:
@@ -444,7 +402,7 @@ class SensitiveStringsSearcher:
 
         # Ask the user about signing off
         if self.config.interactive:
-            if self.user_interaction.approved(self.full_path(relative_path)):
+            if user.approved(self.full_path(relative_path)):
                 return []
             return [Match(0, 0, 0, "", "", "HDF5 file denied by user")]
         matches: list[Match] = []
@@ -528,7 +486,6 @@ class SensitiveStringsSearcher:
 if __name__ == "__main__":
     searcher = SensitiveStringsSearcher()
     searcher.config.parse_args(sys.argv[1:])
-    searcher.user_interaction.assume_yes = searcher.config.assume_yes
     num_errors = searcher.run(git_files_only=True)
     if num_errors > 0:
         sys.exit(1)

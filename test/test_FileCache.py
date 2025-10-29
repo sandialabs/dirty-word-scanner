@@ -1,13 +1,9 @@
 import os
-import sys
 import time
 import unittest
 from datetime import datetime
 
-sys.path.append(
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..")
-)
-import contrib.scripts.FileCache as fc  # nopep8
+import src.opencsp_sensitive_strings.FileCache as fc
 
 
 class test_FileCache(unittest.TestCase):

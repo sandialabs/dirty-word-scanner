@@ -1,13 +1,9 @@
 import numpy as np
 import os
-import sys
 import unittest
 from unittest.mock import patch
 
-sys.path.append(
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..")
-)
-import contrib.scripts.sensitive_strings as ss  # nopep8
+import src.opencsp_sensitive_strings.sensitive_strings as ss
 
 
 class test_sensitive_strings(unittest.TestCase):
@@ -29,7 +25,7 @@ class test_sensitive_strings(unittest.TestCase):
             lambda _: None,
         )
         self.patcher_copy = patch(
-            "contrib.scripts.sensitive_strings.shutil.copyfile",
+            "src.opencsp_sensitive_strings.sensitive_strings.shutil.copyfile",
             lambda *args, **kwargs: None,
         )
         self.patcher_update.start()

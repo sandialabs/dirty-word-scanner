@@ -1,12 +1,8 @@
 import random
 import os
-import sys
 import unittest
 
-sys.path.append(
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..")
-)
-import contrib.scripts.FileFingerprint as ff  # nopep8
+import src.opencsp_sensitive_strings.FileFingerprint as ff
 
 
 class test_FileFingerprint(unittest.TestCase):

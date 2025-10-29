@@ -1,0 +1,28 @@
+[project]
+name = "opencsp-sensitive-strings"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Jason M. Gates", email = "jmgate@sandia.gov" }
+]
+requires-python = ">=3.9"
+dependencies = [
+    "h5py>=3.14.0",
+    "numpy>=2.0.2",
+    "opencv-python>=4.11.0.86",
+    "pillow>=11.2.1",
+]
+
+[project.scripts]
+# opencsp-sensitive-strings = "opencsp_sensitive_strings:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+test = [
+    "pytest>=8.4.0",
+    "pytest-cov>=6.1.1",
+]

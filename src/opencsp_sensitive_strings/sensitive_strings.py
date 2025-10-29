@@ -11,15 +11,15 @@ import tempfile
 import time
 from contextlib import suppress
 from datetime import datetime
+from typing import Union
 
 import cv2
 import numpy as np
 from PIL import Image
 
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
-import contrib.scripts.FileCache as fc  # nopep8
-import contrib.scripts.FileFingerprint as ff  # nopep8
-import contrib.scripts.SensitiveStringMatcher as ssm  # nopep8
+import src.opencsp_sensitive_strings.FileCache as fc
+import src.opencsp_sensitive_strings.FileFingerprint as ff
+import src.opencsp_sensitive_strings.SensitiveStringMatcher as ssm
 
 
 logger = logging.getLogger(__name__)
@@ -89,13 +89,13 @@ def numpy_to_image(arr: np.ndarray, rescale_or_clip="rescale", rescale_max=-1):
     return img
 
 
-def is_dataset_and_shape(object: h5py.Group | h5py.Dataset) -> tuple[bool, tuple]:
+def is_dataset_and_shape(object: Union[h5py.Group, h5py.Dataset]) -> tuple[bool, tuple]:
     """Returns whether the given object is an hdf5 dataset and, if it is, then
     also what it's shape is.
 
     Parameters
     ----------
-    object : h5py.Group | h5py.Dataset
+    object : Union[h5py.Group, h5py.Dataset]
         The object to check the type of.
 
     Returns
@@ -115,12 +115,12 @@ def is_dataset_and_shape(object: h5py.Group | h5py.Dataset) -> tuple[bool, tuple
         return False, tuple()
 
 
-def get_groups_and_datasets(hdf5_path_name_ext: str | h5py.File):
+def get_groups_and_datasets(hdf5_path_name_ext: Union[str, h5py.File]):
     """Get the structure of an HDF5 file, including all group and dataset names, and the dataset shapes.
 
     Parameters
     ----------
-    hdf5_path_name_ext : str | h5py.File
+    hdf5_path_name_ext : Union[str, h5py.File]
         The HDF5 file to parse the structure of.
 
     Returns
@@ -135,7 +135,7 @@ def get_groups_and_datasets(hdf5_path_name_ext: str | h5py.File):
     file_names_and_shapes: list[tuple[str, tuple[int]]] = []
     visited: list[tuple[str, bool, tuple]] = []
 
-    def visitor(name: str, object: h5py.Group | h5py.Dataset):
+    def visitor(name: str, object: Union[h5py.Group, h5py.Dataset]):
         visited.append(tuple([name, *is_dataset_and_shape(object)]))
         return None
 
@@ -161,7 +161,7 @@ def get_groups_and_datasets(hdf5_path_name_ext: str | h5py.File):
 def load_hdf5_datasets(datasets: list[str], file: str):
     """Loads datasets from HDF5 file"""
     with h5py.File(file, "r") as f:
-        kwargs: dict[str, str | h5py.Dataset] = {}
+        kwargs: dict[str, Union[str, h5py.Dataset]] = {}
         # Loop through fields to retreive
         for dataset in datasets:
             # Get data and get dataset name

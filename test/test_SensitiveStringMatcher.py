@@ -1,11 +1,7 @@
 import os
-import sys
 import unittest
 
-sys.path.append(
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..")
-)
-import contrib.scripts.SensitiveStringMatcher as ssm  # nopep8
+import src.opencsp_sensitive_strings.SensitiveStringMatcher as ssm
 
 
 class test_SensitiveStringMatcher(unittest.TestCase):

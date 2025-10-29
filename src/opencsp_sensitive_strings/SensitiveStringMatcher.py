@@ -1,6 +1,7 @@
 import dataclasses
 import logging
 import re
+from typing import Optional, Union
 
 logger = logging.getLogger(__name__)
 
@@ -19,8 +20,8 @@ class Match:
 class SensitiveStringMatcher:
     def __init__(self, name: str, *patterns: str):
         self.name = name
-        self.patterns: list[re.Pattern | str] = []
-        self.neg_patterns: list[re.Pattern | str] = []
+        self.patterns: list[Union[re.Pattern, str]] = []
+        self.neg_patterns: list[Union[re.Pattern, str]] = []
         self.log = logging.debug
         self.case_sensitive = False
 
@@ -70,7 +71,7 @@ class SensitiveStringMatcher:
                         p: re.Pattern = pattern
                         patterns[i] = re.compile(p.pattern.lower())
 
-    def _search_pattern(self, ihaystack: str, pattern: re.Pattern | str) -> None | list[int]:
+    def _search_pattern(self, ihaystack: str, pattern: Union[re.Pattern, str]) -> Optional[list[int]]:
         if isinstance(pattern, str):
             # Check for occurances of string literals
             if pattern in ihaystack:
@@ -87,8 +88,8 @@ class SensitiveStringMatcher:
 
         return None
 
-    def _search_patterns(self, ihaystack: str, patterns: list[re.Pattern | str]) -> dict[re.Pattern | str, list[int]]:
-        ret: dict[re.Pattern | str, list[int]] = {}
+    def _search_patterns(self, ihaystack: str, patterns: list[Union[re.Pattern, str]]) -> dict[Union[re.Pattern, str], list[int]]:
+        ret: dict[Union[re.Pattern, str], list[int]] = {}
 
         for pattern in patterns:
             span = self._search_pattern(ihaystack, pattern)
@@ -107,7 +108,7 @@ class SensitiveStringMatcher:
             possible_matching = self._search_patterns(iline, self.patterns)
 
             # Filter out negative matches in the matching patterns
-            matching: dict[re.Pattern | str, list[int]] = {}
+            matching: dict[Union[re.Pattern, str], list[int]] = {}
             for pattern in possible_matching:
                 span = possible_matching[pattern]
                 line_part = iline[span[0] : span[1]]
@@ -133,7 +134,7 @@ class SensitiveStringMatcher:
 
         return matches
 
-    def set_match_msg(self, match: Match, pattern: re.Pattern | str, line_context: str):
+    def set_match_msg(self, match: Match, pattern: Union[re.Pattern, str], line_context: str):
         log_msg = (
             f"'{self.name}' string matched to pattern '{pattern}' on line {match.lineno} "
             + f'[{match.colno}:{match.colend}]: "{line_context.strip()}" ("{match.line.strip()}")'

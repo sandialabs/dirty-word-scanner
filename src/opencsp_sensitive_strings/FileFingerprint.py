@@ -3,10 +3,8 @@ import dataclasses
 import hashlib
 import logging
 import os
-import sys
 
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
-import contrib.scripts.AbstractFileFingerprint as aff  # nopep8
+import src.opencsp_sensitive_strings.AbstractFileFingerprint as aff
 
 
 logger = logging.getLogger(__name__)

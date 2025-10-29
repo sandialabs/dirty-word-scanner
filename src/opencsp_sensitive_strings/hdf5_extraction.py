@@ -147,7 +147,7 @@ def _get_datasets(hdf5_file: Path) -> list[Path]:
         file.
     """
     datasets: list[Path] = []
-    with h5py.File(hdf5_file, "r") as input_file:
+    with h5py.File(str(hdf5_file), "r") as input_file:
         input_file.visititems(
             lambda name, entity: datasets.append(Path(name))
             if isinstance(entity, h5py.Dataset)
@@ -169,11 +169,11 @@ def _load_dataset_from_file(
     Returns:
         The loaded dataset value.
     """
-    with h5py.File(file, "r") as input_file:
+    with h5py.File(str(file), "r") as input_file:
         data: h5py.Dataset = input_file[f"{dataset}"]
-        is_scalar = np.ndim(data) == 0 and np.size(data) == 1
-        is_single_element_array = np.ndim(data) > 0 and np.size(data) == 1
-        is_non_empty_array = np.size(data) > 0
+        is_scalar = data.ndim == 0 and data.size == 1
+        is_single_element_array = data.ndim > 0 and data.size == 1
+        is_non_empty_array = data.size > 0
         return _decode_if_bytes(
             _get_scalar_value(data)
             if is_scalar
